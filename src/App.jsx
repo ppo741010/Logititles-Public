@@ -3030,7 +3030,11 @@ function MarketInsights() {
                 <Pie data={levelData} dataKey="value" nameKey="name" cx="50%" cy="42%" outerRadius={70}>
                   {levelData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Pie>
-                <Tooltip formatter={v => [v, "Jobs"]} />
+                <Tooltip formatter={(v, name) => {
+                  const total = levelData.reduce((s, d) => s + d.value, 0);
+                  const pct = total ? ((v / total) * 100).toFixed(1) : 0;
+                  return [`${pct}% (${v.toLocaleString()} jobs)`, name];
+                }} />
                 <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={name => {
                   const total = levelData.reduce((s, d) => s + d.value, 0);
                   const item = levelData.find(d => d.name === name);
@@ -3049,7 +3053,11 @@ function MarketInsights() {
                 <Pie data={natureData} dataKey="value" nameKey="name" cx="50%" cy="42%" outerRadius={70}>
                   {natureData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Pie>
-                <Tooltip formatter={v => [v, "Jobs"]} />
+                <Tooltip formatter={(v, name) => {
+                  const total = natureData.reduce((s, d) => s + d.value, 0);
+                  const pct = total ? ((v / total) * 100).toFixed(1) : 0;
+                  return [`${pct}% (${v.toLocaleString()} jobs)`, name];
+                }} />
                 <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={name => {
                   const total = natureData.reduce((s, d) => s + d.value, 0);
                   const item = natureData.find(d => d.name === name);
