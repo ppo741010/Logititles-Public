@@ -1,80 +1,103 @@
 # Logistics Title Mapper
 
-A browser-based tool for cleaning, classifying, and normalizing logistics job titles — built for recruiters, HR teams, and workforce analysts who work with messy job ad data.
+> **Rule-based + AI classification engine for logistics job titles** — cleans noise, maps to 9 functional domains, infers seniority and skills from raw title text.
 
-**Live:** https://logistics-title-mapper.vercel.app/
+**Live:** https://www.logititles.com &nbsp;|&nbsp; **API:** Python FastAPI on Render (Sydney)
+
+![React](https://img.shields.io/badge/React-Vite-61DAFB?logo=react) ![Python](https://img.shields.io/badge/Python-FastAPI-009688?logo=python) ![Supabase](https://img.shields.io/badge/Auth-Supabase-3ECF8E?logo=supabase) ![Vercel](https://img.shields.io/badge/Deploy-Vercel-000?logo=vercel)
 
 ---
 
 ## The Problem
 
-Job title data collected from job boards, spreadsheets, or applicant tracking systems is often inconsistent and hard to work with:
+Job title data from job boards and ATS systems is inconsistent and hard to work with:
 
-- The same role appears under dozens of different names (`Sr. Ops Mgr`, `Senior Operations Manager`, `ops manager - Auckland $85k FTC`)
-- Titles contain noise — salary ranges, locations, shift types, contract durations — that makes grouping and analysis difficult
-- There is no standard taxonomy, so comparing roles across datasets or time periods requires manual cleanup
+- The same role appears under dozens of names — `Sr. Ops Mgr`, `Senior Operations Manager`, `ops manager Auckland $85k FTC`
+- Titles contain noise: salary ranges, locations, shift types, contract durations
+- No standard taxonomy exists, making cross-dataset comparison or reporting impossible without manual cleanup
 
-Doing this by hand is slow and error-prone. Logistics Title Mapper automates the most repetitive parts.
-
----
-
-## What It Does
-
-### 1. Single Analyzer
-Paste a raw job title and get an instant structured output:
-- **Clean Title** — noise removed, abbreviations expanded, known acronyms preserved (HSE, WMS, FP&A, etc.)
-- **Functional Area** — which logistics domain the role belongs to (9 domains)
-- **Seniority Level** — Entry Level · Mid Level · Senior · Manager · Executive
-- **Work Nature** — Management, Specialist/Support, or Operational
-- **Normalized Skills** — canonical skill tags matched from title and description
-- **Confidence Score** — 0–100 with matched keywords shown
-- **Review Flags** — highlights ambiguous, short, or out-of-scope inputs
-- **Salary Benchmark** — market reference range for NZ and AU roles (select country to activate)
-
-Optionally provide a **job description** to improve classification accuracy, and a **country** (NZ/AU) to show salary benchmarks.
-
-### 2. Bulk Upload
-Upload a CSV or XLSX file (up to 10,000 rows) and process everything at once:
-- **Multi-sheet XLSX support** — select which sheet to import when a workbook has multiple sheets
-- Auto-detect or manually map column names (title, description, country)
-- **Clean Preview** — review before/after cleaning for every title; edit any clean title manually before classification runs
-- **Data Analysis Charts** — automatically generated after processing: Domain Distribution, Seniority Breakdown, Top Skills, Salary by Domain
-- **PNG Export** — download charts as a screenshot image
-- **PDF Report** — 2-page A4 landscape export: page 1 is a summary report (stats + insights), page 2 is the charts
-- Download structured output as CSV, JSON, or Excel
-- Export includes `salary_range` and `salary_median` columns when country is provided
-
-### 3. AI Assistant
-A floating chat bubble (bottom-right of the Bulk Upload results page) powered by Claude Haiku:
-- Ask questions about your uploaded dataset in plain language
-- Context from the classify results is automatically passed in
-- Available to authenticated Pro users
-- Examples: *"Which domain has the most senior roles?"*, *"Summarise the skill gaps in the dataset"*
-
-### 4. Skill Mapper
-Paste raw skill phrases from job descriptions and normalize them to standard canonical labels:
-- `warehouse management system` → `WMS`
-- `advanced excel` → `Microsoft Excel (Advanced)`
-- `generative ai`, `chatgpt` → `Generative AI`
-- Covers logistics systems, AI tools, Microsoft/Google Office, accounting software (Xero, MYOB), project management tools, HR systems, and soft skills
-- Skill data loaded from `skill_normalize.json` — single source of truth shared with the backend
-
-### 5. Title Cleaner
-See exactly how titles are transformed — useful for understanding the cleaning rules before running a bulk job:
-- Removes salary ranges, locations, shift patterns, contract types, noise phrases
-- Expands abbreviations (`Sr.` → `Senior`, `Ops Mgr` → `Operations Manager`)
-- Preserves known acronyms in uppercase (HSE, WMS, SAP, HR, IT, KPI, etc.)
-
-### 6. Export
-Configure and download structured output with selectable fields:
-- Choose which fields to include (raw title, clean title, domain, seniority, skills, salary, flags, etc.)
-- Export as CSV, JSON, or XLSX
+Doing this at scale by hand is slow and error-prone. This tool automates the classification pipeline.
 
 ---
 
-## Functional Areas
+## Features
 
-Roles are classified into 9 domains:
+| Feature | Details |
+|---------|---------|
+| **Single Analyzer** | Paste a title → instant domain, seniority, skills, confidence score |
+| **Bulk Upload** | CSV/XLSX up to 10,000 rows; multi-sheet support; column auto-detection |
+| **Clean Preview** | Review and edit every cleaned title before classification runs |
+| **Data Analysis Charts** | Domain distribution, seniority breakdown, top 8 skills, salary by domain/level |
+| **PDF/PNG Export** | 2-page A4 landscape report: stats summary + charts |
+| **Skill Mapper** | Normalize raw skill phrases to canonical labels (288+ mappings) |
+| **AI Assistant** | Claude Haiku chat with dataset context — Pro users only |
+| **Market Insights** | Aggregated NZ/AU logistics market data from cleaned_jobs (Supabase) |
+| **Auth + Plans** | Supabase JWT auth; Guest / Basic / Pro tier gating |
+
+---
+
+## Architecture
+
+```
+Browser (React + Vite)
+  │
+  ├── Supabase Auth (JWT) ──────────────── user_plans table (tier gating)
+  │
+  ├── FastAPI Backend (Render, Sydney)
+  │     ├── POST /analyze          ← single title classification
+  │     ├── POST /bulk-analyze     ← batch classification (chunked)
+  │     ├── POST /clean-preview    ← title cleaning preview
+  │     └── POST /chat             ← Claude Haiku AI chat
+  │           │
+  │           └── classify_core.py (shared module)
+  │                 ├── classify_domain()   4-stage pipeline
+  │                 ├── classify_level()    keyword + skills_knowledge_map
+  │                 └── classify_work_nature()
+  │
+  ├── Local JS fallback (classify in-browser if API is down)
+  │
+  └── Supabase cleaned_jobs table ──────── Market Insights page (paginated reads)
+
+JSON config (single source of truth):
+  backend/json/logistics_config.json      ← 288+ domain keywords, level mapping, salary benchmarks
+  backend/json/skill_normalize.json       ← skill synonym map (also copied to src/)
+  backend/json/skills_knowledge_map.json  ← 992 title → skills/level lookup entries
+```
+
+---
+
+## Classification Pipeline
+
+Each title goes through **4 stages in order**, stopping at the first confident match:
+
+| Stage | Method | Confidence |
+|-------|--------|-----------|
+| 1 | Keyword scoring on title (multi-word keywords weighted higher) | 72–92% |
+| 2 | Fuzzy repair rules — substring fallback for abbreviated titles (165+ rules) | 74% |
+| 3 | Description keyword match — used when title alone is insufficient | 58–72% |
+| 4 | Claude Haiku AI fallback — for titles that pass all rule stages unmatched | ≤ 70% |
+
+**Seniority** is classified separately: exact keyword match on title → skills_knowledge_map lookup → domain-based default.
+
+**Skills** are extracted by cross-referencing title and description text against a 992-entry lookup map, then normalized via `skill_normalize.json`.
+
+---
+
+## Key Engineering Decisions
+
+**Rule-based first, AI last** — AI fallback is capped at 70% confidence and only triggered when all rule stages fail. This keeps per-request cost near zero for most inputs while maintaining accuracy for edge cases.
+
+**Single JSON config as source of truth** — All domain keywords, level mappings, and salary benchmarks live in `logistics_config.json`. Adding a new keyword or domain rule requires editing one file, not touching code. The same file is shared between the FastAPI backend and a separate data pipeline (`seek-pipeline`).
+
+**`classify_core.py` as shared module** — Classification logic is extracted into a standalone module imported by both the API server and the nightly pipeline scripts. This ensures the pipeline that populates `cleaned_jobs` uses identical logic to the live API — no drift between what users see and what the Market Insights page shows.
+
+**Local JS fallback** — A JavaScript port of the classification rules runs in the browser if the API is unavailable. Users see a visible warning, but the tool stays functional. Accuracy is lower but the experience doesn't break.
+
+**Paginated Supabase reads** — Market Insights bypasses Supabase's default 1,000-row limit by looping with `.range()` pagination until all records are fetched client-side, then computing aggregates in JavaScript. Avoids needing a custom RPC or Edge Function for what is currently a modest dataset.
+
+---
+
+## Functional Domains
 
 | Domain | Example Roles |
 |--------|--------------|
@@ -84,22 +107,9 @@ Roles are classified into 9 domains:
 | Planning | Demand Planner, Supply Chain Analyst, Procurement Manager |
 | Operations | Operations Manager, HSE Manager, Logistics Coordinator |
 | Finance | Accounts Payable, FP&A Manager, Payroll Officer |
-| Sales | Account Manager, Business Development, BD Executive |
-| IT Support | IT Support Officer, Helpdesk, Technical Support, SAP Consultant |
+| Sales | Account Manager, Business Development Executive |
+| IT Support | SAP Consultant, IT Support Officer, Business Systems Analyst |
 | Business Administration | EA, HR Coordinator, Office Manager |
-
----
-
-## How Classification Works
-
-Classification follows a **four-stage pipeline**:
-
-1. **Keyword match on title** — scores title against 9 domain keyword lists (288+ keywords); multi-word keywords weighted higher. Confidence 72–92%.
-2. **Fuzzy repair rules** — substring fallback for abbreviated or ambiguous titles (165+ entries). Confidence 74% (30% if noise).
-3. **Description keyword match** — used when title alone is insufficient. Confidence 58–72%.
-4. **AI fallback (Claude Haiku)** — called for titles that pass all three rule stages without a match. Capped at 70% confidence.
-
-All outputs are **suggested draft classifications** intended for normalization and review support, not final authoritative labels.
 
 ---
 
@@ -107,32 +117,13 @@ All outputs are **suggested draft classifications** intended for normalization a
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React + Vite, deployed on Vercel |
-| Backend | Python FastAPI, deployed on Render (Sydney) |
-| Classification | Rule-based engine + Claude Haiku AI fallback |
-| AI Assistant | Claude Haiku (Anthropic API) — chat only, not classification |
-| Charts | Recharts (frontend, no API cost) |
-| PDF Export | jsPDF + html2canvas |
+| Frontend | React + Vite, Recharts, jsPDF, html2canvas, SheetJS |
+| Backend | Python FastAPI, deployed on Render (Sydney region) |
 | Auth | Supabase Auth (JWT) |
-| Skill data | `skill_normalize.json` (shared frontend/backend) |
-| Config | `logistics_config.json` — domain keywords, level mapping, salary benchmarks |
-| File handling | SheetJS (xlsx) for CSV/XLSX parsing and export |
-
-The frontend calls the Python API for all classification. A local JavaScript fallback is used if the API is unavailable, with a visible warning shown to the user.
-
----
-
-## JSON Config Files
-
-All classification data lives in `backend/json/`:
-
-| File | Purpose |
-|------|---------|
-| `logistics_config.json` | Domain keywords, fuzzy repair rules, level mapping, salary benchmarks |
-| `skill_normalize.json` | Skill synonym map (also copied to `src/` for frontend use) |
-| `skills_knowledge_map.json` | 992 job title → skills/level lookup entries |
-
-> `backend/json/` is the source of truth. After editing, copy `skill_normalize.json` to `src/skill_normalize.json` and sync to seek-pipeline with `cp backend/json/*.json ../seek-pipeline/json/`.
+| Database | Supabase (PostgreSQL) — `cleaned_jobs`, `user_plans`, `feedback` tables |
+| Classification | Rule-based engine (`classify_core.py`) + Claude Haiku AI fallback |
+| AI Assistant | Claude Haiku via Anthropic API |
+| Deployment | Vercel (frontend), Render (backend) |
 
 ---
 
@@ -142,6 +133,7 @@ All classification data lives in `backend/json/`:
 ```bash
 npm install
 npm run dev
+# Set VITE_API_URL=http://localhost:8000 in .env.local
 ```
 
 ### Backend
@@ -149,14 +141,33 @@ npm run dev
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
+# Set ANTHROPIC_API_KEY in environment for AI features
 ```
 
-Backend runs at `http://localhost:8000`. Set `VITE_API_URL=http://localhost:8000` in a `.env.local` file to point the frontend at your local backend.
+---
 
-Set `ANTHROPIC_API_KEY` in your environment to enable the AI fallback and AI Assistant in local development.
+## Data Pipeline
+
+A separate nightly pipeline (`seek-pipeline/`) scrapes NZ/AU logistics job postings, runs them through the same `classify_core.py` logic, and writes results to `cleaned_jobs` in Supabase. The Market Insights page reads from this table.
+
+The pipeline runs via **GitHub Actions at 1am NZT daily** — no manual intervention required.
+
+---
+
+## Regression Testing
+
+A golden dataset of **98 hand-labeled records** (`golden_dataset.csv`) is used to validate classification accuracy after any config or logic change:
+
+```bash
+cd seek-pipeline
+python test_golden.py
+# Domain: 98/98 (100%) | Level: 98/98 (100%) | Work Nature: 98/98 (100%)
+```
+
+All three dimensions currently pass at 100%.
 
 ---
 
 ## Feedback
 
-Found a misclassification or have a suggestion? Use the feedback link inside the app.
+Found a misclassification or have a suggestion? Use the feedback button inside the app.
