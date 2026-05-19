@@ -2929,7 +2929,7 @@ function MarketInsights() {
         avg: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length / 1000) * 1000,
         count: vals.length,
       }))
-      .filter(d => d.count >= 3)
+      .filter(d => d.count >= 20)
       .sort((a, b) => b.avg - a.avg);
   }
 
@@ -2957,7 +2957,7 @@ function MarketInsights() {
       buckets[label].push(r.salary_yearly);
     });
     return LEVEL_ORDER
-      .filter(l => buckets[l] && buckets[l].length >= 3)
+      .filter(l => buckets[l] && buckets[l].length >= 20)
       .map(l => ({
         name: l,
         avg:    Math.round(buckets[l].reduce((a, b) => a + b, 0) / buckets[l].length / 1000) * 1000,
@@ -3022,6 +3022,14 @@ function MarketInsights() {
       {data && !loading && data.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
 
+          {/* Data source disclaimer */}
+          <div style={{ gridColumn: "1 / -1", padding: "10px 16px", borderRadius: 8, background: C.bg, border: `1px solid ${C.border}`, fontSize: 11, color: C.textMuted, lineHeight: 1.6 }}>
+            <strong style={{ color: C.textSub }}>About this data:</strong>{" "}
+            Sourced from NZ/AU logistics job postings. Domain, seniority, and skills are inferred from job titles — not extracted from job descriptions.
+            Salary data is available for {data.filter(r => r.salary_yearly).length.toLocaleString()} of {total.toLocaleString()} records ({total ? Math.round(data.filter(r => r.salary_yearly).length / total * 100) : 0}%) and reflects advertised rates only.
+            All figures are indicative reference ranges, not authoritative benchmarks.
+          </div>
+
           {/* Domain breakdown */}
           <Card>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>Domain Breakdown</div>
@@ -3039,7 +3047,8 @@ function MarketInsights() {
 
           {/* Top Skills */}
           <Card>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>Top 8 Skills</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Top 8 Skills</div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 14 }}>Common skills associated with these roles — inferred from job titles, not job descriptions.</div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={skillData} layout="vertical" margin={{ left: 10, right: 40 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
