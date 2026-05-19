@@ -688,6 +688,28 @@ function useIsMobile() {
 
 // ── Design system ───────────────────────────────────────────────────────────
 
+const spinnerKeyframes = `
+@keyframes spin { to { transform: rotate(360deg); } }
+`;
+if (typeof document !== "undefined" && !document.getElementById("spinner-style")) {
+  const s = document.createElement("style");
+  s.id = "spinner-style";
+  s.textContent = spinnerKeyframes;
+  document.head.appendChild(s);
+}
+
+function Spinner({ size = 24, color = "#3b6ef5" }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%",
+      border: `3px solid #e5e7eb`,
+      borderTopColor: color,
+      animation: "spin 0.7s linear infinite",
+      flexShrink: 0,
+    }} />
+  );
+}
+
 const C = {
   sidebar: "#ffffff", sidebarHover: "#eef2ff", sidebarActive: "#eef2ff",
   sidebarText: "#6b7280", sidebarActiveText: "#4f46e5",
@@ -993,7 +1015,8 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin }) {
             </Card>
           )}
           {loading && (
-            <Card style={{ background: C.bg, minHeight: 340, display: "flex", alignItems: "center", justifyContent: "center", color: C.textMuted }}>
+            <Card style={{ background: C.bg, minHeight: 340, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, color: C.textMuted }}>
+              <Spinner size={32} />
               <div style={{ fontSize: 13 }}>Analyzing…</div>
             </Card>
           )}
@@ -2980,8 +3003,9 @@ function MarketInsights() {
       </div>
 
       {loading && (
-        <div style={{ textAlign: "center", padding: "60px 0", color: C.textMuted, fontSize: 14 }}>
-          Loading market data…
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0", gap: 16, color: C.textMuted }}>
+          <Spinner size={36} />
+          <div style={{ fontSize: 14 }}>Loading market data…</div>
         </div>
       )}
       {error && (
