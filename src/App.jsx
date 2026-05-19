@@ -2924,13 +2924,14 @@ function MarketInsights() {
       buckets[r.domain].push(r.salary_yearly);
     });
     return Object.entries(buckets)
-      .map(([domain, vals]) => ({
-        name: domain,
-        avg: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length / 1000) * 1000,
-        count: vals.length,
-      }))
+      .map(([domain, vals]) => {
+        const sorted = [...vals].sort((a, b) => a - b);
+        const median = Math.round(sorted[Math.floor(sorted.length / 2)] / 1000) * 1000;
+        const avg    = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length / 1000) * 1000;
+        return { name: domain, median, avg, count: vals.length };
+      })
       .filter(d => d.count >= 20)
-      .sort((a, b) => b.avg - a.avg);
+      .sort((a, b) => b.median - a.median);
   }
 
   const CHART_COLORS = ["#4f46e5","#7c3aed","#0ea5e9","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#84cc16","#f97316"];
@@ -3114,13 +3115,15 @@ function MarketInsights() {
             </div>
           )}
 
-          {/* Avg Salary by Domain */}
+          {/* Median Salary by Domain */}
           {country !== "all" && salaryData.length > 0 && (
             <Card style={{ gridColumn: "1 / -1" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
-                Avg Salary by Domain ({country === "AU" ? "AUD" : country === "NZ" ? "NZD" : "NZD/AUD"}/yr)
+                Median Salary by Domain ({country === "AU" ? "AUD" : "NZD"}/yr)
               </div>
-              <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 14 }}>Based on roles with salary data only. Market estimates — not authoritative benchmarks.</div>
+              <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 14 }}>
+                Median advertised salary — roles with salary data only (n ≥ 20 per domain). Market estimates, not authoritative benchmarks.
+              </div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={salaryData} margin={{ left: 10, right: 20 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} />
@@ -3131,12 +3134,13 @@ function MarketInsights() {
                     return (
                       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 12 }}>
                         <div style={{ fontWeight: 700 }}>{d.name}</div>
-                        <div>Avg: <strong>${d.avg.toLocaleString()}</strong></div>
-                        <div style={{ color: "#6b7280" }}>Based on {d.count} records</div>
+                        <div>Median: <strong>${d.median.toLocaleString()}</strong></div>
+                        <div style={{ color: "#6b7280" }}>Avg: ${d.avg.toLocaleString()}</div>
+                        <div style={{ color: "#6b7280" }}>n = {d.count} records with salary</div>
                       </div>
                     );
                   }} />
-                  <Bar dataKey="avg" radius={[4,4,0,0]} isAnimationActive={false} activeBar={false}>
+                  <Bar dataKey="median" radius={[4,4,0,0]} isAnimationActive={false} activeBar={false}>
                     {salaryData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
                 </BarChart>
@@ -3144,13 +3148,15 @@ function MarketInsights() {
             </Card>
           )}
 
-          {/* Salary by Seniority Level */}
+          {/* Median Salary by Seniority Level */}
           {country !== "all" && salaryLvlData.length > 0 && (
             <Card style={{ gridColumn: "1 / -1" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
-                Avg Salary by Seniority ({country === "AU" ? "AUD" : country === "NZ" ? "NZD" : "NZD/AUD"}/yr)
+                Median Salary by Seniority ({country === "AU" ? "AUD" : "NZD"}/yr)
               </div>
-              <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 14 }}>Average salary from Executive down to Entry Level — based on roles with salary data only.</div>
+              <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 14 }}>
+                Median advertised salary by level (n ≥ 20). Mixed domains — IT roles may skew Senior upward.
+              </div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={salaryLvlData} margin={{ left: 10, right: 20 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} />
@@ -3161,14 +3167,14 @@ function MarketInsights() {
                     return (
                       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 12 }}>
                         <div style={{ fontWeight: 700 }}>{d.name}</div>
-                        <div>Avg: <strong>${d.avg.toLocaleString()}</strong></div>
                         <div>Median: <strong>${d.median.toLocaleString()}</strong></div>
+                        <div style={{ color: "#6b7280" }}>Avg: ${d.avg.toLocaleString()}</div>
                         <div style={{ color: "#6b7280" }}>Range: ${d.min.toLocaleString()} – ${d.max.toLocaleString()}</div>
-                        <div style={{ color: "#6b7280" }}>Based on {d.count} records</div>
+                        <div style={{ color: "#6b7280" }}>n = {d.count} records with salary</div>
                       </div>
                     );
                   }} />
-                  <Bar dataKey="avg" radius={[4,4,0,0]} isAnimationActive={false} activeBar={false}>
+                  <Bar dataKey="median" radius={[4,4,0,0]} isAnimationActive={false} activeBar={false}>
                     {salaryLvlData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
                 </BarChart>
