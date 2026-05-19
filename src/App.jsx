@@ -4,7 +4,7 @@ import { analyzeViaAPI, bulkAnalyzeViaAPI, cleanPreviewViaAPI, submitFeedback, c
 startKeepAlive();
 import skillConfig from "./skill_normalize.json";
 import { supabase } from "./supabase.js";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LabelList } from "recharts";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -3013,11 +3013,13 @@ function MarketInsights() {
           <Card>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>Top 8 Skills</div>
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={skillData} layout="vertical" margin={{ left: 10, right: 20 }}>
+              <BarChart data={skillData} layout="vertical" margin={{ left: 10, right: 40 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={130} />
                 <Tooltip formatter={v => [v, "Mentions"]} />
-                <Bar dataKey="value" fill={C.accent} radius={[0,4,4,0]} />
+                <Bar dataKey="value" fill={C.accent} radius={[0,4,4,0]}>
+                  <LabelList dataKey="value" position="right" style={{ fontSize: 10, fill: "#6b7280" }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -3170,6 +3172,7 @@ export default function App() {
   const [user, setUser]                   = useState(null);
   const [userPlan, setUserPlan]           = useState(null); // null = guest
   const [showAuth, setShowAuth]           = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Plan limits
   const LIMITS = {
@@ -3306,62 +3309,88 @@ export default function App() {
     <div style={{ display: "flex", height: "100vh", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif", background: C.bg }}>
 
       {/* Sidebar */}
-      <div style={{ width: 218, background: C.sidebar, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-        <div style={{ padding: "22px 18px 18px" }}>
-          <div onClick={() => setShowLanding(true)} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, cursor: "pointer" }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>📦</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#1e1b4b", lineHeight: 1.2 }}>Logititles</div>
+      <div style={{ width: sidebarCollapsed ? 56 : 218, background: C.sidebar, display: "flex", flexDirection: "column", flexShrink: 0, transition: "width 0.2s ease", overflow: "hidden" }}>
+        {/* Header */}
+        <div style={{ padding: sidebarCollapsed ? "18px 12px" : "22px 18px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {!sidebarCollapsed && (
+            <div onClick={() => setShowLanding(true)} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>📦</div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1e1b4b", lineHeight: 1.2 }}>Logititles</div>
+                <div style={{ fontSize: 10, color: "#a5b4fc", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.1em" }}>Tool · v2</div>
+              </div>
             </div>
-          </div>
-          <div style={{ fontSize: 10, color: "#a5b4fc", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.1em" }}>Normalization Tool · v2</div>
+          )}
+          {sidebarCollapsed && (
+            <div onClick={() => setShowLanding(true)} style={{ width: 32, height: 32, borderRadius: 8, background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, cursor: "pointer" }}>📦</div>
+          )}
+          <button onClick={() => setSidebarCollapsed(c => !c)}
+            style={{ background: "none", border: "1px solid #e5e7eb", borderRadius: 6, cursor: "pointer", padding: "3px 6px", fontSize: 12, color: C.sidebarText, flexShrink: 0, lineHeight: 1 }}>
+            {sidebarCollapsed ? "→" : "←"}
+          </button>
         </div>
 
-        <nav style={{ flex: 1, padding: "4px 10px" }}>
+        <nav style={{ flex: 1, padding: "4px 8px" }}>
           {NAV.map(n => (
             <button key={n.id} onClick={() => setPage(n.id)}
-              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 11px", borderRadius: 8, border: "none", cursor: "pointer", textAlign: "left", background: page === n.id ? C.sidebarActive : "transparent", color: page === n.id ? C.sidebarActiveText : C.sidebarText, fontSize: 13.5, fontWeight: page === n.id ? 600 : 400, marginBottom: 2, fontFamily: "inherit", transition: "background 0.12s" }}>
-              <span style={{ fontSize: 15, width: 20, textAlign: "center", opacity: page === n.id ? 1 : 0.7 }}>{n.icon}</span>
-              {n.label}
+              title={sidebarCollapsed ? n.label : undefined}
+              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: sidebarCollapsed ? "9px 0" : "9px 11px", justifyContent: sidebarCollapsed ? "center" : "flex-start", borderRadius: 8, border: "none", cursor: "pointer", textAlign: "left", background: page === n.id ? C.sidebarActive : "transparent", color: page === n.id ? C.sidebarActiveText : C.sidebarText, fontSize: 13.5, fontWeight: page === n.id ? 600 : 400, marginBottom: 2, fontFamily: "inherit", transition: "background 0.12s" }}>
+              <span style={{ fontSize: 15, width: 20, textAlign: "center", opacity: page === n.id ? 1 : 0.7, flexShrink: 0 }}>{n.icon}</span>
+              {!sidebarCollapsed && n.label}
             </button>
           ))}
         </nav>
 
-        <div style={{ padding: "14px 18px", borderTop: "1px solid #e5e7eb" }}>
-          {user ? (
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
-              <button onClick={() => supabase.auth.signOut()}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#ef4444", fontFamily: "inherit", padding: 0 }}>
-                Sign Out
+        <div style={{ padding: sidebarCollapsed ? "14px 8px" : "14px 18px", borderTop: "1px solid #e5e7eb" }}>
+          {!sidebarCollapsed && (
+            <>
+              {user ? (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
+                  <button onClick={() => supabase.auth.signOut()}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#ef4444", fontFamily: "inherit", padding: 0 }}>
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setShowAuth(true)}
+                  style={{ width: "100%", padding: "7px 0", borderRadius: 7, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}>
+                  Sign In / Sign Up
+                </button>
+              )}
+              <button onClick={() => setShowLanding(true)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#9ca3af", fontFamily: "inherit", padding: 0, lineHeight: 1.8, display: "block" }}>
+                ← Back to Landing Page
               </button>
-            </div>
-          ) : (
-            <button onClick={() => setShowAuth(true)}
-              style={{ width: "100%", padding: "7px 0", borderRadius: 7, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}>
-              Sign In / Sign Up
+              <button onClick={() => setShowFeedback(true)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#4a527a", fontFamily: "inherit", padding: 0, lineHeight: 1.8, display: "block", marginTop: 4 }}>
+                💬 Give Feedback
+              </button>
+              <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
+                <button onClick={() => setPage("privacy")}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: "#9ca3af", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
+                  Privacy
+                </button>
+                <span style={{ fontSize: 10, color: "#d1d5db" }}>·</span>
+                <button onClick={() => setPage("terms")}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: "#9ca3af", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
+                  Terms
+                </button>
+              </div>
+            </>
+          )}
+          {sidebarCollapsed && user && (
+            <button onClick={() => supabase.auth.signOut()} title="Sign Out"
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 0, display: "block", margin: "0 auto" }}>
+              🚪
             </button>
           )}
-          <button onClick={() => setShowLanding(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#9ca3af", fontFamily: "inherit", padding: 0, lineHeight: 1.8, display: "block" }}>
-            ← Back to Landing Page
-          </button>
-          <button
-            onClick={() => setShowFeedback(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#4a527a", fontFamily: "inherit", padding: 0, lineHeight: 1.8, display: "block", marginTop: 4 }}>
-            💬 Give Feedback
-          </button>
-          <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
-            <button onClick={() => setPage("privacy")}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: "#9ca3af", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
-              Privacy
+          {sidebarCollapsed && !user && (
+            <button onClick={() => setShowAuth(true)} title="Sign In"
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 0, display: "block", margin: "0 auto" }}>
+              👤
             </button>
-            <span style={{ fontSize: 10, color: "#d1d5db" }}>·</span>
-            <button onClick={() => setPage("terms")}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: "#9ca3af", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
-              Terms
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
