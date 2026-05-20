@@ -3389,7 +3389,22 @@ export default function App() {
             <>
               {user ? (
                 <div style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
+                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
+                      background: planKey === "pro" ? "#dcfce7" : "#eff6ff",
+                      color: planKey === "pro" ? "#15803d" : "#1d4ed8",
+                      border: planKey === "pro" ? "1px solid #86efac" : "1px solid #bfdbfe",
+                      textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {planKey === "pro" ? "Pro" : "Basic"}
+                    </span>
+                  </div>
+                  {planKey !== "pro" && (
+                    <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
+                      style={{ display: "block", textAlign: "center", padding: "5px 0", borderRadius: 6, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 11, textDecoration: "none", marginBottom: 6 }}>
+                      Upgrade to Pro →
+                    </a>
+                  )}
                   <button onClick={() => supabase.auth.signOut()}
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#ef4444", fontFamily: "inherit", padding: 0 }}>
                     Sign Out
