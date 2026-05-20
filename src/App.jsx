@@ -206,7 +206,7 @@ function AIProWall({ onLogin, isLoggedIn }) {
           </div>
         ))}
       </div>
-      <a href="https://buy.stripe.com/test_28E6oI6OU9p7dO2ajmafS00" target="_blank" rel="noopener noreferrer"
+      <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
         style={{ padding: "11px 32px", borderRadius: 9, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, marginTop: 4, textDecoration: "none", display: "inline-block" }}>
         Upgrade to Pro →
       </a>
@@ -1732,7 +1732,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
       {user && userPlan?.plan === "basic" && (
         <div style={{ marginBottom: 14, padding: "10px 16px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fcd34d", fontSize: 13, color: "#92400e", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <span>Basic plan — up to <strong>1,000 rows</strong> per upload. Used this period: <strong>{userPlan.bulk_used || 0}</strong></span>
-          <a href="https://buy.stripe.com/test_28E6oI6OU9p7dO2ajmafS00" target="_blank" rel="noopener noreferrer"
+          <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
             style={{ padding: "5px 16px", borderRadius: 6, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
             Upgrade to Pro →
           </a>
