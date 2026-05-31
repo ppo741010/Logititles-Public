@@ -75,7 +75,7 @@ const DOMAIN_SKILL_FIXED = {
   "Other/Noise":[],
 };
 
-const REMOVE_PHRASES = ["immediate start","apply now","great opportunity","exciting opportunity","career growth","wanted","needed","join our team","above award rate","great money","packag","distrib","remuner","salary package","competitive package","competitive salary","bonus"];
+const REMOVE_PHRASES = ["immediate start","apply now","great opportunity","exciting opportunity","career growth","wanted","needed","join our team","above award rate","great money","packag","remuner","salary package","competitive package","competitive salary","bonus"];
 const REMOVE_SHIFT = ["night shift","day shift","afternoon shift","am shift","pm shift","overnight","morning shift","part time","full time","casual"];
 const REMOVE_CONTRACT = ["ftc","fixed term","fixed-term","contract role","contract position","temp role","temporary role","temp to perm","maternity cover","parental leave cover","secondment","ongoing","permanent role","casual role"];
 const SALARY_PATTERN = /\$[\d,]+[k]?(\s*[-–]\s*\$?[\d,]+[k]?)?\s*(pa\b|p\.a\.|per annum|per year|annually|ph\b|p\.h\.|per hour)?/gi;
