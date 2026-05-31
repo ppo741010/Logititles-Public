@@ -685,7 +685,14 @@ function detectColumns(headers) {
 
 // ── Export utilities ─────────────────────────────────────────────────────────
 
-const EXPORT_FIELDS = ["raw_title","clean_title","domain","work_nature","seniority","confidence","skills","flags","needs_review","country","salary_range","salary_median"];
+const EXPORT_FIELDS = ["raw_title","clean_title","domain","work_nature","seniority","confidence","status","skills","flags","needs_review","country","salary_range","salary_median"];
+
+function getStatusLabel(r) {
+  if (r.domain === "Other/Noise") return "Out of scope";
+  if (r.confidence < 55)          return "Low confidence";
+  if (r.needsReview)              return "Review recommended";
+  return "Good match";
+}
 
 function buildExportRow(r) {
   return {
@@ -695,6 +702,7 @@ function buildExportRow(r) {
     work_nature:     r.nature || "",
     seniority:       r.seniority || "",
     confidence:      `${r.confidence}%`,
+    status:          getStatusLabel(r),
     skills:          (r.skills || []).join("; "),
     flags:           (r.flags || []).join(" | "),
     needs_review:    r.needsReview ? "Yes" : "No",
@@ -1668,6 +1676,7 @@ function BulkAIBubble({ results }) {
 
 function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, onLogin, planKey = "guest" }) {
   const [phase, setPhase]               = useState("idle"); // idle | error | sheet-select | mapping | ready | previewing | processing | done
+  const [statusFilter, setStatusFilter] = useState("all");
   const [error, setError]               = useState(null);
   const [fileName, setFileName]         = useState("");
   const [parsedRows, setParsedRows]     = useState([]);
@@ -2114,6 +2123,16 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
             {phase === "done" && (total - structured) > 0 && (
               <div style={{ fontSize: 12, color: C.amber, fontWeight: 600 }}>⚑ {total - structured} row{total - structured !== 1 ? "s" : ""} flagged</div>
             )}
+            {phase === "done" && (
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                style={{ fontSize: 12, padding: "4px 8px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.bg, color: C.text, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="all">All results</option>
+                <option value="good">✓ Good match</option>
+                <option value="review">⚑ Review recommended</option>
+                <option value="low">⚠ Low confidence</option>
+                <option value="oos">✗ Out of scope</option>
+              </select>
+            )}
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
@@ -2123,13 +2142,27 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
                     ...(phase === "previewing" ? ["Clean Title (editable)"] : []),
                     ...(phase === "done" ? ["Clean Title","Functional Area","Seniority","Match Confidence","Status"] : [])
                   ].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                      {h === "Status" ? (
+                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          Status
+                          <span title="Status helps you decide whether a classification can be used directly or should be reviewed before export." style={{ cursor: "help", fontSize: 10, color: C.textMuted, border: `1px solid ${C.border}`, borderRadius: "50%", width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>?</span>
+                        </span>
+                      ) : h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {(phase === "done"
-                  ? results
+                  ? results.filter(r => {
+                      if (statusFilter === "all") return true;
+                      if (statusFilter === "oos")    return r.domain === "Other/Noise";
+                      if (statusFilter === "low")    return r.domain !== "Other/Noise" && r.confidence < 55;
+                      if (statusFilter === "review") return r.domain !== "Other/Noise" && r.confidence >= 55 && r.needsReview;
+                      if (statusFilter === "good")   return r.domain !== "Other/Noise" && !r.needsReview && r.confidence >= 55;
+                      return true;
+                    })
                   : phase === "previewing"
                   ? cleanPreviews.map((p, i) => ({ id: i + 1, raw: p.raw, clean: p.clean, original: p.original }))
                   : parsedRows.slice(0, 12).map((r, i) => ({ id: i + 1, raw: r[colMap.rawTitle] || "(empty)" }))
