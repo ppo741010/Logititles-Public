@@ -100,7 +100,7 @@ const HOURS_POSITIONS_PATTERN = /\b(\d+\.?\d*\s*h(rs?|ours?)(\s*p\.?w\.?|\s*per\
 // ── Feedback modal ────────────────────────────────────────────────────────────
 
 function AuthModal({ onClose, onSuccess }) {
-  const [tab, setTab]         = useState("login");   // "login" | "signup"
+  const [tab, setTab]         = useState("login");   // "login" | "signup" | "reset"
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
   const [error, setError]     = useState("");
@@ -117,8 +117,14 @@ function AuthModal({ onClose, onSuccess }) {
         if (err) throw err;
         onSuccess();
         onClose();
-      } else {
+      } else if (tab === "signup") {
         const { error: err } = await supabase.auth.signUp({ email, password });
+        if (err) throw err;
+        setDone(true);
+      } else if (tab === "reset") {
+        const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: "https://app.logititles.com",
+        });
         if (err) throw err;
         setDone(true);
       }
@@ -143,9 +149,28 @@ function AuthModal({ onClose, onSuccess }) {
           <div style={{ textAlign: "center", padding: "16px 0" }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>📧</div>
             <div style={{ fontWeight: 600, color: C.text, marginBottom: 6 }}>Check your email</div>
-            <div style={{ fontSize: 13, color: C.textMuted }}>We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</div>
+            <div style={{ fontSize: 13, color: C.textMuted }}>
+              {tab === "reset"
+                ? <>We sent a password reset link to <strong>{email}</strong>.</>
+                : <>We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</>}
+            </div>
             <button onClick={onClose} style={{ marginTop: 20, padding: "9px 24px", borderRadius: 8, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
           </div>
+        ) : tab === "reset" ? (
+          <>
+            <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 16 }}>Enter your email and we'll send you a reset link.</div>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} />
+              {error && <div style={{ fontSize: 12, color: "#ef4444", background: "#fef2f2", padding: "8px 10px", borderRadius: 6 }}>{error}</div>}
+              <button type="submit" disabled={loading}
+                style={{ padding: "10px 0", borderRadius: 8, border: "none", background: loading ? "#d1d5db" : C.accent, color: "#fff", fontWeight: 700, fontSize: 14, cursor: loading ? "default" : "pointer", fontFamily: "inherit", marginTop: 4 }}>
+                {loading ? "Please wait…" : "Send Reset Link"}
+              </button>
+            </form>
+            <button onClick={() => { setTab("login"); setError(""); }} style={{ marginTop: 12, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: C.textMuted, fontFamily: "inherit", textDecoration: "underline" }}>
+              Back to Sign In
+            </button>
+          </>
         ) : (
           <>
             <div style={{ display: "flex", gap: 0, marginBottom: 20, borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}` }}>
@@ -166,6 +191,11 @@ function AuthModal({ onClose, onSuccess }) {
                 {loading ? "Please wait…" : tab === "login" ? "Sign In" : "Create Account"}
               </button>
             </form>
+            {tab === "login" && (
+              <button onClick={() => { setTab("reset"); setError(""); }} style={{ marginTop: 10, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: C.textMuted, fontFamily: "inherit", textDecoration: "underline" }}>
+                Forgot password?
+              </button>
+            )}
           </>
         )}
       </div>
