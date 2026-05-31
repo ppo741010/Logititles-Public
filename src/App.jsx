@@ -2060,9 +2060,10 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
             <div style={{ background: "#1e1b4b", color: "#c7d2fe", borderRadius: 16, padding: "12px 18px", maxWidth: 280, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", fontSize: 13 }}>
               <div style={{ fontWeight: 700, marginBottom: 6 }}>💬 AI Analysis</div>
               <div style={{ color: "#a5b4fc", marginBottom: 10, fontSize: 12 }}>Ask questions about your data — domain breakdown, skills, salary trends, and more.</div>
-              <div style={{ display: "inline-block", background: "#6b7280", color: "#fff", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700 }}>
-                Coming Soon
-              </div>
+              <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-block", background: "#4f46e5", color: "#fff", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                Upgrade to Pro →
+              </a>
             </div>
           </div>
         )}
