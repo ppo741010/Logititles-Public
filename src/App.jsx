@@ -895,8 +895,8 @@ function LandingPage({ onEnter }) {
     { icon: "✏️", title: "Clean Titles",       desc: "Removes noise, expands abbreviations, strips location and shift suffixes automatically." },
     { icon: "🏷️", title: "Classify Roles",     desc: "Suggests functional area, seniority level, and work nature using a rule-based taxonomy." },
     { icon: "🧩", title: "Normalize Skills",   desc: "Maps raw skill phrases like 'WMS software' or 'advanced excel' to standard canonical labels." },
-    { icon: "📂", title: "Bulk Processing",    desc: "Upload CSV or XLSX files with up to 10,000 rows. Map your own column names." },
-    { icon: "📈", title: "Data Analysis",      desc: "Auto-generate charts — domain distribution, seniority breakdown, top skills, and salary benchmarks. Export as PNG or PDF report." },
+    { icon: "📂", title: "Bulk Processing",    desc: "Upload CSV or XLSX files. Row limits depend on your plan (100 rows on Guest, 1,000 on Basic, 10,000 on Pro)." },
+    { icon: "📈", title: "Data Analysis",      desc: "Auto-generate charts — domain distribution, seniority breakdown, top skills, and salary reference fields where available. Export as PNG or PDF." },
     { icon: "✨", title: "AI Assistant",       desc: "Ask questions about your classified data in plain English. Hiring trends, skill gaps, salary comparisons and more. Pro plan." },
   ];
 
@@ -1840,7 +1840,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
           style={{ border: `2px dashed ${dragOver ? C.accent : C.border}`, borderRadius: 10, padding: "52px 24px", textAlign: "center", background: dragOver ? C.accentLight : C.bg, cursor: "pointer", transition: "all 0.15s" }}>
           <div style={{ fontSize: 38, marginBottom: 12 }}>📁</div>
           <div style={{ fontWeight: 700, color: C.text, fontSize: 15, marginBottom: 6 }}>Drag & drop your file here</div>
-          <div style={{ color: C.textMuted, fontSize: 13, marginBottom: 18 }}>Supports CSV and XLSX · up to 10,000 rows</div>
+          <div style={{ color: C.textMuted, fontSize: 13, marginBottom: 18 }}>Supports CSV and XLSX · row limit depends on your plan</div>
           <button style={{ padding: "10px 26px", borderRadius: 8, border: `1.5px solid ${C.accent}`, background: C.card, color: C.accent, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
             Browse File
           </button>
