@@ -1135,18 +1135,19 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin }) {
                 </div>
               )}
               {result.domain === "Other/Noise" && (
-                <div style={{ background: C.redLight, border: `1.5px solid ${C.redBorder}`, borderRadius: 10, padding: "14px 18px" }}>
-                  <div style={{ fontWeight: 700, color: "#991b1b", fontSize: 13, marginBottom: 6 }}>⚠ Outside logistics scope</div>
-                  {result.noiseReason === "fuzzy_noise" && (
-                    <div style={{ fontSize: 12, color: "#b91c1c", lineHeight: 1.7 }}>
-                      Detected term <span style={{ fontFamily: "monospace", background: "#fecaca", padding: "1px 5px", borderRadius: 4 }}>{result.noiseKeyword}</span> — this matches a known non-logistics role category.<br />
-                      This title is likely outside the logistics/supply chain domain. Exclude or manually reclassify before use.
+                <div style={{ background: "#fffbeb", border: "1.5px solid #fcd34d", borderRadius: 10, padding: "16px 18px" }}>
+                  <div style={{ fontWeight: 700, color: "#92400e", fontSize: 13, marginBottom: 6 }}>This title doesn't appear to be a logistics role</div>
+                  {result.noiseReason === "fuzzy_noise" ? (
+                    <div style={{ fontSize: 12, color: "#78350f", lineHeight: 1.7 }}>
+                      The term <span style={{ fontFamily: "monospace", background: "#fef3c7", padding: "1px 5px", borderRadius: 4 }}>{result.noiseKeyword}</span> suggests this role is outside the logistics and supply chain domain.
+                      <br />
+                      <span style={{ color: "#92400e" }}>What you can do:</span> If this is a logistics-adjacent role, try adding a job description to help the classifier. Otherwise, you can exclude it from your dataset before exporting.
                     </div>
-                  )}
-                  {result.noiseReason === "no_match" && (
-                    <div style={{ fontSize: 12, color: "#b91c1c", lineHeight: 1.7 }}>
-                      No logistics keywords were detected in this title or description.<br />
-                      This title may be unrelated to logistics. Verify the source data or add a job description to improve classification.
+                  ) : (
+                    <div style={{ fontSize: 12, color: "#78350f", lineHeight: 1.7 }}>
+                      No logistics-related keywords were found in this title or description. This may mean the role is outside the logistics and supply chain domain, or the title is too short or abbreviated to classify.
+                      <br />
+                      <span style={{ color: "#92400e" }}>What you can do:</span> Try adding a job description to give the classifier more context, or check if the title is from a logistics or supply chain role.
                     </div>
                   )}
                 </div>
