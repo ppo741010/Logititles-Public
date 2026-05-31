@@ -3316,8 +3316,8 @@ export default function App() {
         .insert({ user_id: uid, plan: "basic" }).select().single();
       setUserPlan(created);
     } else {
-      // Auto-reset if period expired
-      if (new Date(data.current_period_end) < new Date()) {
+      // Auto-reset if period expired (skip if no end date set)
+      if (data.current_period_end && new Date(data.current_period_end) < new Date()) {
         const { data: reset } = await supabase.from("user_plans")
           .update({ bulk_used: 0, ai_used: 0, current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() })
           .eq("user_id", uid).select().single();
