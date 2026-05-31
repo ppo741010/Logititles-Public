@@ -38,16 +38,19 @@ export default async function handler(req, res) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const email = session.customer_details?.email;
+    const amountTotal = session.amount_total; // in cents
 
     if (email) {
       const { data: users } = await supabase.auth.admin.listUsers();
       const user = users?.users?.find((u) => u.email === email);
 
       if (user) {
+        // NZ$9 = Basic, NZ$29 = Pro (amount_total is in cents)
+        const newPlan = amountTotal <= 1000 ? "basic" : "pro";
         await supabase
           .from("user_plans")
           .update({
-            plan: "pro",
+            plan: newPlan,
             current_period_end: new Date(
               Date.now() + 30 * 24 * 60 * 60 * 1000
             ).toISOString(),

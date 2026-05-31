@@ -3406,7 +3406,19 @@ export default function App() {
                       {planKey === "pro" ? "Pro" : "Basic"}
                     </span>
                   </div>
-                  {planKey !== "pro" && (
+                  {planKey === "guest" && (
+                    <>
+                      <a href="https://buy.stripe.com/cNibJ2aYX7W81r8f4u7ok01" target="_blank" rel="noopener noreferrer"
+                        style={{ display: "block", textAlign: "center", padding: "5px 0", borderRadius: 6, background: "#6366f1", color: "#fff", fontWeight: 700, fontSize: 11, textDecoration: "none", marginBottom: 4 }}>
+                        Get Basic NZ$9 →
+                      </a>
+                      <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
+                        style={{ display: "block", textAlign: "center", padding: "5px 0", borderRadius: 6, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 11, textDecoration: "none", marginBottom: 6 }}>
+                        Get Pro NZ$29 →
+                      </a>
+                    </>
+                  )}
+                  {planKey === "basic" && (
                     <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
                       style={{ display: "block", textAlign: "center", padding: "5px 0", borderRadius: 6, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 11, textDecoration: "none", marginBottom: 6 }}>
                       Upgrade to Pro →
