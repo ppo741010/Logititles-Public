@@ -845,16 +845,19 @@ function SectionTitle({ children, sub }) {
   );
 }
 
+function matchConfidenceLabel(value) {
+  if (value >= 85) return { label: "High",                      text: C.green, bar: C.green };
+  if (value >= 70) return { label: "Medium — review recommended", text: C.amber, bar: C.amber };
+  if (value >= 55) return { label: "Low — review recommended",    text: C.amber, bar: C.amber };
+  return               { label: "Uncertain",                    text: C.red,   bar: C.red };
+}
+
 function ConfidenceBar({ value }) {
-  const tone = value >= 80
-    ? { bar: C.green, label: "High",                    text: C.green }
-    : value >= 60
-    ? { bar: C.amber, label: "Medium",                  text: C.amber }
-    : { bar: C.red,   label: "Low — review recommended", text: C.red };
+  const tone = matchConfidenceLabel(value);
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.07em" }}>Confidence Score</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.07em" }}>Match Confidence</span>
         <span style={{ fontSize: 12, fontWeight: 700, color: tone.text }}>{value}% · {tone.label}</span>
       </div>
       <div style={{ background: "#e5e7eb", borderRadius: 6, height: 8, overflow: "hidden" }}>
@@ -2101,7 +2104,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
                 <tr style={{ background: C.bg, borderBottom: `2px solid ${C.border}` }}>
                   {["#", "Raw Title",
                     ...(phase === "previewing" ? ["Clean Title (editable)"] : []),
-                    ...(phase === "done" ? ["Clean Title","Functional Area","Seniority","Confidence","Status"] : [])
+                    ...(phase === "done" ? ["Clean Title","Functional Area","Seniority","Match Confidence","Status"] : [])
                   ].map(h => (
                     <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
@@ -2144,7 +2147,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
                         <td style={{ padding: "10px 16px", fontWeight: 600, color: C.text }}>{row.cleanTitle}</td>
                         <td style={{ padding: "10px 16px" }}><Badge tone={domainTone(row.domain)} size="sm">{row.domain}</Badge></td>
                         <td style={{ padding: "10px 16px" }}><Badge tone={seniorityTone(row.seniority)} size="sm" variant="tag">{row.seniority}</Badge></td>
-                        <td style={{ padding: "10px 16px", fontWeight: 700, fontSize: 13, color: row.confidence >= 80 ? C.green : row.confidence >= 60 ? C.amber : C.red }}>
+                        <td style={{ padding: "10px 16px", fontWeight: 700, fontSize: 13, color: matchConfidenceLabel(row.confidence).text }}>
                           {row.confidence}%
                         </td>
                         <td style={{ padding: "10px 16px" }}>
@@ -2368,9 +2371,9 @@ function TitleCleaner() {
               <Badge tone={seniorityTone(manualResult.seniority)} variant="tag">{manualResult.seniority}</Badge>
             </div>
             <div>
-              <FieldLabel>Confidence</FieldLabel>
-              <span style={{ fontSize: 13, fontWeight: 700, color: manualResult.confidence >= 80 ? C.green : manualResult.confidence >= 60 ? C.amber : C.red }}>
-                {manualResult.confidence}%
+              <FieldLabel>Match Confidence</FieldLabel>
+              <span style={{ fontSize: 13, fontWeight: 700, color: matchConfidenceLabel(manualResult.confidence).text }}>
+                {manualResult.confidence}% · {matchConfidenceLabel(manualResult.confidence).label}
               </span>
             </div>
           </div>
