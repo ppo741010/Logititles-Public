@@ -3611,14 +3611,48 @@ export default function App() {
       </div>
 
       {/* Main */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "32px 38px" }}>
-        {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} />}
-        {page === "bulk"     && <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />}
-        {page === "export"   && <ExportPage bulkResults={bulkResults} />}
-        {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
-        {page === "privacy"  && <PrivacyPolicy />}
-        {page === "terms"    && <TermsOfService />}
-        {!["analyzer","bulk","export","ai","privacy","terms"].includes(page) && navItem && <navItem.component />}
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+
+        {/* Top bar */}
+        <div style={{ background: C.sidebar, borderBottom: `1px solid ${C.border}`, padding: "10px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: C.textMuted }}>
+            {!user ? (
+              <span>Guest — <strong style={{ color: C.text }}>10 single checks/day</strong> · <strong style={{ color: C.text }}>100 rows</strong> per upload</span>
+            ) : planKey === "basic" ? (
+              <span><span style={{ fontWeight: 700, color: "#1d4ed8", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "1px 8px", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Basic</span> &nbsp;Up to <strong style={{ color: C.text }}>1,000 rows</strong> per upload</span>
+            ) : planKey === "pro" ? (
+              <span><span style={{ fontWeight: 700, color: "#15803d", background: "#dcfce7", border: "1px solid #86efac", borderRadius: 10, padding: "1px 8px", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Pro</span> &nbsp;Up to <strong style={{ color: C.text }}>10,000 rows</strong> · AI Assistant included</span>
+            ) : null}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {!user && (
+              <button onClick={() => setShowAuth(true)}
+                style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                Sign In
+              </button>
+            )}
+            {user && planKey !== "pro" && (
+              <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
+                style={{ padding: "5px 14px", borderRadius: 6, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
+                Upgrade to Pro →
+              </a>
+            )}
+            <a href="https://www.logititles.com" target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 12, color: C.textMuted, textDecoration: "none" }}>
+              ← Back to website
+            </a>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "32px 38px" }}>
+          {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} />}
+          {page === "bulk"     && <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />}
+          {page === "export"   && <ExportPage bulkResults={bulkResults} />}
+          {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
+          {page === "privacy"  && <PrivacyPolicy />}
+          {page === "terms"    && <TermsOfService />}
+          {!["analyzer","bulk","export","ai","privacy","terms"].includes(page) && navItem && <navItem.component />}
+        </div>
       </div>
 
       {showFeedback && <FeedbackModal page={page} onClose={() => setShowFeedback(false)} />}
