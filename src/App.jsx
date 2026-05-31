@@ -880,13 +880,20 @@ function LandingPage({ onEnter }) {
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: "16px 48px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>© 2026 Logititles · logititles@gmail.com</span>
-        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <a href="https://www.logititles.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textDecoration: "underline" }}>logititles.com</a>
-          <button onClick={() => { onEnter("privacy"); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "inherit", textDecoration: "underline", padding: 0 }}>Privacy Policy</button>
-          <button onClick={() => { onEnter("terms"); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "inherit", textDecoration: "underline", padding: 0 }}>Terms of Service</button>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: "16px 48px", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+          <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>© 2026 Logititles · logititles@gmail.com</span>
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            <a href="https://www.logititles.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textDecoration: "underline" }}>logititles.com</a>
+            <button onClick={() => { onEnter("privacy"); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "inherit", textDecoration: "underline", padding: 0 }}>Privacy Policy</button>
+            <button onClick={() => { onEnter("terms"); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "inherit", textDecoration: "underline", padding: 0 }}>Terms of Service</button>
+          </div>
         </div>
+        <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, lineHeight: 1.6, textAlign: "center" }}>
+          Logititles is currently in beta. Plan limits, pricing, and features may change as the product develops.
+          Please use sample, public, or anonymised data — avoid uploading confidential, personal, or sensitive company data.
+          Logititles is an independent personal project and is not affiliated with SEEK, Indeed, LINZ, or any external job platform.
+        </p>
       </div>
     </div>
   );
