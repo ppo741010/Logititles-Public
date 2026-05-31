@@ -2170,9 +2170,11 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
                         <td style={{ padding: "10px 16px" }}>
                           {isOOS
                             ? <span style={{ fontSize: 11, fontWeight: 700, color: C.red }}>✗ Out of scope</span>
+                            : row.confidence < 55
+                            ? <span style={{ fontSize: 11, fontWeight: 600, color: C.red }}>⚠ Low confidence</span>
                             : needsRev
-                            ? <span style={{ fontSize: 11, fontWeight: 600, color: C.amber }}>⚑ Review</span>
-                            : <span style={{ fontSize: 11, color: C.green }}>✓ Structured</span>}
+                            ? <span style={{ fontSize: 11, fontWeight: 600, color: C.amber }}>⚑ Review recommended</span>
+                            : <span style={{ fontSize: 11, color: C.green }}>✓ Good match</span>}
                         </td>
                       </>}
                     </tr>
