@@ -863,6 +863,11 @@ function ConfidenceBar({ value }) {
       <div style={{ background: "#e5e7eb", borderRadius: 6, height: 8, overflow: "hidden" }}>
         <div style={{ width: `${value}%`, background: tone.bar, height: 8, borderRadius: 6, transition: "width 0.6s ease" }} />
       </div>
+      {value < 85 && (
+        <div style={{ fontSize: 11, color: C.textMuted, marginTop: 6, lineHeight: 1.5 }}>
+          This result is a reasonable classification, but the title or description may be ambiguous. Please review before using in final reporting.
+        </div>
+      )}
     </div>
   );
 }
@@ -1832,6 +1837,10 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
           </a>
         </div>
       )}
+
+      <div style={{ marginBottom: 12, padding: "9px 14px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: 12, color: "#166534" }}>
+        Please use sample, public, or anonymised data. Avoid uploading confidential, personal, or sensitive company data.
+      </div>
 
       <Card>
         <div onDragOver={e => { e.preventDefault(); setDragOver(true); }}
