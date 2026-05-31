@@ -1074,10 +1074,18 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin }) {
               }
             </div>
           )}
-          <button onClick={run} disabled={!title.trim() || loading || guestBlocked}
-            style={{ width: "100%", padding: "12px", borderRadius: 8, background: (title.trim() && !guestBlocked) ? C.accent : "#d1d5db", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: (title.trim() && !guestBlocked) ? "pointer" : "default", fontFamily: "inherit" }}>
-            {loading ? "Processing…" : guestBlocked ? "Daily limit reached" : "Analyze →"}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={run} disabled={!title.trim() || loading || guestBlocked}
+              style={{ flex: 1, padding: "12px", borderRadius: 8, background: (title.trim() && !guestBlocked) ? C.accent : "#d1d5db", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: (title.trim() && !guestBlocked) ? "pointer" : "default", fontFamily: "inherit" }}>
+              {loading ? "Processing…" : guestBlocked ? "Daily limit reached" : "Analyze →"}
+            </button>
+            {(title || desc || country || result) && (
+              <button onClick={() => { setTitle(""); setDesc(""); setCountry(""); setResult(null); }}
+                style={{ padding: "12px 16px", borderRadius: 8, background: C.card, border: `1px solid ${C.border}`, color: C.textMuted, fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+                Clear
+              </button>
+            )}
+          </div>
 
           <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
             <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 9, fontWeight: 600 }}>TRY AN EXAMPLE</div>
