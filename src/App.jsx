@@ -2359,12 +2359,20 @@ function SkillMapper() {
   const [input, setInput]     = useState("");
   const [results, setResults] = useState([]);
 
+  const TOO_BROAD = new Set([
+    "software","system","systems","tool","tools","platform","platforms",
+    "technology","technologies","skills","experience","knowledge","ability",
+    "management","support","operations","process","processing","services",
+    "database","data","analytics","reporting","communication","planning",
+  ]);
+
   function mapSkills() {
     const phrases = input.split(/[,\n]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
     setResults(phrases.map(phrase => {
       const exact = Object.entries(SKILL_SYNONYMS).find(([k]) => k === phrase);
       const match = exact ?? Object.entries(SKILL_SYNONYMS).find(([k]) => phrase.includes(k) && k.length > 3);
-      return { raw: phrase, normalized: match ? match[1] : null };
+      const tooBroad = !match && TOO_BROAD.has(phrase);
+      return { raw: phrase, normalized: match ? match[1] : null, tooBroad };
     }));
   }
 
@@ -2417,17 +2425,24 @@ function SkillMapper() {
             : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {results.map((r, i) => (
-                  <div key={i} style={{ padding: "10px 14px", borderRadius: 8, background: r.normalized ? C.greenLight : C.redLight, border: `1px solid ${r.normalized ? C.greenBorder : C.redBorder}` }}>
+                  <div key={i} style={{ padding: "10px 14px", borderRadius: 8, background: r.normalized ? C.greenLight : r.tooBroad ? C.amberLight : C.redLight, border: `1px solid ${r.normalized ? C.greenBorder : r.tooBroad ? C.amberBorder : C.redBorder}` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <span style={{ fontFamily: "monospace", fontSize: 12, color: C.text, flexShrink: 0 }}>{r.raw}</span>
                       <span style={{ color: C.textMuted, fontSize: 11 }}>→</span>
                       {r.normalized
                         ? <Badge tone="green">{r.normalized}</Badge>
+                        : r.tooBroad
+                        ? <span style={{ fontSize: 12, color: C.amber, fontWeight: 600 }}>⚠ Too broad — use a more specific phrase</span>
                         : <span style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>⚑ No match — review</span>}
                     </div>
                     {r.normalized && SKILL_DESCRIPTIONS[r.normalized] && (
                       <div style={{ marginTop: 6, fontSize: 11, color: "#166534", lineHeight: 1.6 }}>
                         {SKILL_DESCRIPTIONS[r.normalized]}
+                      </div>
+                    )}
+                    {r.tooBroad && (
+                      <div style={{ marginTop: 4, fontSize: 11, color: "#78350f", lineHeight: 1.5 }}>
+                        Try a more specific term such as WMS, TMS, ERP, SAP, or CRM.
                       </div>
                     )}
                   </div>
