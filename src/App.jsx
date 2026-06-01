@@ -3622,10 +3622,18 @@ export default function App() {
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
-        {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} savedTitle={analyzerState.title} savedDesc={analyzerState.desc} savedCountry={analyzerState.country} savedResult={analyzerState.result} onSaveState={setAnalyzerState} />}
-        {page === "bulk"     && <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />}
+        {/* Persistent pages — kept mounted to preserve state, hidden when not active */}
+        <div style={{ display: page === "analyzer" ? "block" : "none" }}>
+          <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} savedTitle={analyzerState.title} savedDesc={analyzerState.desc} savedCountry={analyzerState.country} savedResult={analyzerState.result} onSaveState={setAnalyzerState} />
+        </div>
+        <div style={{ display: page === "bulk" ? "block" : "none" }}>
+          <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />
+        </div>
+        <div style={{ display: page === "ai" ? "block" : "none" }}>
+          {planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} bulkResults={bulkResults} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />}
+        </div>
+        {/* Other pages — conditionally rendered */}
         {page === "export"   && <ExportPage bulkResults={bulkResults} />}
-        {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} bulkResults={bulkResults} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
         {page === "privacy"  && <PrivacyPolicy />}
         {page === "terms"    && <TermsOfService />}
         {!["analyzer","bulk","export","ai","privacy","terms"].includes(page) && navItem && <navItem.component />}
@@ -3799,10 +3807,18 @@ export default function App() {
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "32px 38px" }}>
-          {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} savedTitle={analyzerState.title} savedDesc={analyzerState.desc} savedCountry={analyzerState.country} savedResult={analyzerState.result} onSaveState={setAnalyzerState} />}
-          {page === "bulk"     && <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />}
+          {/* Persistent pages — kept mounted to preserve state, hidden when not active */}
+          <div style={{ display: page === "analyzer" ? "block" : "none" }}>
+            <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} savedTitle={analyzerState.title} savedDesc={analyzerState.desc} savedCountry={analyzerState.country} savedResult={analyzerState.result} onSaveState={setAnalyzerState} />
+          </div>
+          <div style={{ display: page === "bulk" ? "block" : "none" }}>
+            <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />
+          </div>
+          <div style={{ display: page === "ai" ? "block" : "none" }}>
+            {planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} bulkResults={bulkResults} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />}
+          </div>
+          {/* Other pages — conditionally rendered */}
           {page === "export"   && <ExportPage bulkResults={bulkResults} />}
-          {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} bulkResults={bulkResults} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
           {page === "privacy"  && <PrivacyPolicy />}
           {page === "terms"    && <TermsOfService />}
           {!["analyzer","bulk","export","ai","privacy","terms"].includes(page) && navItem && <navItem.component />}
