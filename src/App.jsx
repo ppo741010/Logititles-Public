@@ -1929,8 +1929,9 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
         </div>
       )}
 
-      <div style={{ marginBottom: 12, padding: "9px 14px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: 12, color: "#166534" }}>
-        Please use sample, public, or anonymised data. Avoid uploading confidential, personal, or sensitive company data.
+      <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: 12, color: "#166534", lineHeight: 1.6 }}>
+        🔒 <strong>Data notice:</strong> Please use sample, public, or anonymised data. Avoid uploading confidential, internal, or personally identifiable data.
+        Job titles are logged for classifier improvement — descriptions are <strong>not</strong> stored. See Privacy Policy in the About section.
       </div>
 
       <Card>
@@ -2955,17 +2956,19 @@ function PrivacyPolicy() {
           {
             title: "How we use submitted data",
             items: [
-              "Submitted job titles and classification results are logged to improve the accuracy of the classification engine over time.",
-              "We may review patterns in submitted titles to add new rules or correct misclassifications. Individual submissions are not manually reviewed in isolation.",
+              "Submitted job titles and classification results (domain, confidence, status) are logged to improve classification accuracy over time. Job descriptions are not stored.",
+              "We may review patterns in submitted titles to improve rules or correct misclassifications. Individual submissions are not manually reviewed in isolation.",
               "Feedback and waitlist data are stored securely in Supabase (supabase.com), hosted in the US. See Supabase's privacy policy for infrastructure details.",
+              "Please avoid uploading confidential, internally sensitive, or personally identifiable data. This tool is designed for job title text only.",
             ],
           },
           {
             title: "Data retention",
             items: [
-              "Title log and feedback data are retained indefinitely for classification improvement purposes.",
+              "Job title logs are retained for classifier improvement. Descriptions are never stored. We plan to introduce automatic deletion of title logs older than 12 months.",
+              "Feedback data is retained to identify classification patterns and improve accuracy.",
               "Waitlist data is retained until you request removal or until the waitlist is closed.",
-              "You may request deletion of any data associated with your email address by contacting us.",
+              "You may request deletion of any data associated with your email address by contacting logititles@gmail.com.",
             ],
           },
           {
