@@ -748,7 +748,10 @@
     "Controller": "Mid Level",
     "Allocator": "Mid Level",
     "Broker": "Mid Level",
-    "Business Development": "Mid Level"
+    "Business Development": "Mid Level",
+    "Jr": "Entry Level",
+    "Jnr": "Entry Level",
+    "Snr": "Senior"
   },
   "WORK_NATURE_MAPPING": {
     "Management": [

@@ -45,13 +45,14 @@ const LEVEL_MAPPING = {
   "manager":"Manager",
   "consultant":"Manager","analyst":"Manager","strategist":"Manager",
   "specialist":"Senior",
-  "senior":"Senior","team lead":"Senior",
+  "senior":"Senior","snr":"Senior","team lead":"Senior",
   "principal":"Senior","advanced":"Senior",
   "coordinator":"Mid Level","supervisor":"Mid Level",
   "officer":"Mid Level","administrator":"Mid Level",
   "representative":"Mid Level","operator":"Mid Level",
   "driver":"Mid Level","planner":"Mid Level",
-  "junior":"Entry Level","graduate":"Entry Level","trainee":"Entry Level",
+  "junior":"Entry Level","jr":"Entry Level","jnr":"Entry Level",
+  "graduate":"Entry Level","trainee":"Entry Level",
   "entry":"Entry Level","assistant":"Entry Level","picker":"Entry Level",
   "packer":"Entry Level","handler":"Entry Level",
 };
@@ -2512,23 +2513,42 @@ function TitleCleaner() {
             ⚠ API unavailable — result from local classifier.
           </div>
         )}
-        {manualResult && (
+        {manualResult && (() => {
+          const raw = manualInput.trim();
+          const cleaned = manualResult.cleanTitle;
+          const unchanged = cleaned.toLowerCase().replace(/\s/g,"") === raw.toLowerCase().replace(/\s/g,"");
+          // Detect what changed
+          const changes = [];
+          const hiringPhrases = ["hiring now","urgent","now hiring","we're hiring","we are hiring","apply now","immediate start"];
+          if (hiringPhrases.some(p => raw.toLowerCase().includes(p))) changes.push("removed hiring phrase");
+          const locations = ["auckland","wellington","christchurch","hamilton","dunedin","sydney","melbourne","brisbane","perth","adelaide","canberra","nz","au","remote","hybrid"];
+          if (locations.some(l => raw.toLowerCase().includes(l)) && !cleaned.toLowerCase().includes("auckland") && !cleaned.toLowerCase().includes("sydney")) changes.push("removed location");
+          const noiseWords = ["part-time","full-time","part time","full time","contract","casual","fixed term","night shift","day shift"];
+          if (noiseWords.some(n => raw.toLowerCase().includes(n))) changes.push("removed noise");
+          const abbrevMap = [["snr","senior"],["jr","junior"],["jnr","junior"],["whse","warehouse"],["whs","warehouse"],["ops","operations"],["mgr","manager"],["coord","coordinator"],["admin","administrator"],["asst","assistant"],["dc","distribution centre"],["bd","business development"],["op","operator"],["spec","specialist"],["tl","team lead"],["gm","general manager"]];
+          const expandedAbbrevs = abbrevMap.filter(([abbr]) => new RegExp(`\\b${abbr}\\b`, "i").test(raw));
+          if (expandedAbbrevs.length > 0) changes.push(`expanded ${expandedAbbrevs.map(([a,b]) => `${a.toUpperCase()} → ${b.charAt(0).toUpperCase()+b.slice(1)}`).join(", ")}`);
+          if (raw !== raw.toUpperCase() && raw.replace(/[^A-Z]/g,"").length / raw.replace(/[^a-zA-Z]/g,"").length > 0.7) changes.push("normalised case");
+          return (
           <div style={{ marginTop: 16, borderRadius: 9, border: `1px solid ${C.accentBorder}`, overflow: "hidden" }}>
             {/* Before → After */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 0, background: C.accentLight, padding: "14px 18px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "flex-start", gap: 0, background: C.accentLight, padding: "14px 18px" }}>
               <div>
                 <FieldLabel>Original</FieldLabel>
-                <div style={{ fontFamily: "monospace", fontSize: 13, color: C.textSub, background: C.pill, padding: "4px 10px", borderRadius: 6, display: "inline-block" }}>{manualInput}</div>
+                <div style={{ fontFamily: "monospace", fontSize: 13, color: C.textSub, background: C.pill, padding: "4px 10px", borderRadius: 6, display: "inline-block" }}>{raw}</div>
               </div>
-              <div style={{ fontSize: 20, color: C.accent, padding: "0 12px" }}>→</div>
+              <div style={{ fontSize: 20, color: C.accent, padding: "0 12px", marginTop: 16 }}>→</div>
               <div>
                 <FieldLabel>Cleaned</FieldLabel>
                 <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
-                  {manualResult.cleanTitle}
-                  {manualResult.cleanTitle.toLowerCase().replace(/\s/g,"") === manualInput.toLowerCase().replace(/\s/g,"") && (
-                    <span style={{ fontSize: 11, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>no changes</span>
-                  )}
+                  {cleaned}
+                  {unchanged && <span style={{ fontSize: 11, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>no changes</span>}
                 </div>
+                {!unchanged && changes.length > 0 && (
+                  <div style={{ fontSize: 11, color: C.textMuted, marginTop: 5, lineHeight: 1.6 }}>
+                    {changes.map((c, i) => <span key={i} style={{ display: "block" }}>· {c.charAt(0).toUpperCase()+c.slice(1)}</span>)}
+                  </div>
+                )}
               </div>
             </div>
             {/* Classification info */}
@@ -2543,7 +2563,8 @@ function TitleCleaner() {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
       </Card>
 
       {/* Sample table */}
