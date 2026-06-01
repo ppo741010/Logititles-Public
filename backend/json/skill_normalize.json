@@ -227,7 +227,17 @@
     "oracle system": "ERP Systems",
     "netsuite": "ERP Systems",
     "myob": "ERP Systems",
-    "xero": "ERP Systems"
+    "xero": "ERP Systems",
+    "transport planning system": "TMS",
+    "transport planning systems": "TMS",
+    "freight management system": "TMS",
+    "freight management systems": "TMS",
+    "freight system": "TMS",
+    "freight systems": "TMS",
+    "fleet management system": "TMS",
+    "fleet management systems": "TMS",
+    "route planning system": "TMS",
+    "route planning systems": "TMS"
   },
   "abbreviations": [
     "WMS",
