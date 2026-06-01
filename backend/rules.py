@@ -141,7 +141,7 @@ _GENERIC_TITLE_WORDS: frozenset[str] = frozenset({
 REMOVE_PHRASES = [
     "immediate start", "apply now", "great opportunity", "exciting opportunity",
     "career growth", "wanted", "needed", "join our team", "above award rate",
-    "great money", "packag", "distrib", "remuner", "salary package",
+    "great money", "packag", "remuner", "salary package",
     "competitive package", "competitive salary", "bonus",
 ]
 REMOVE_SHIFT = [
