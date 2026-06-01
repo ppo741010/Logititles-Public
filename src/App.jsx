@@ -1673,7 +1673,12 @@ function BulkAIBubble({ results }) {
     const token = session?.access_token ?? "";
     const ctx = results.length > 0 ? buildContext() : "";
     const reply = await chatViaAPI(msg, history, ctx, token);
-    setMessages(prev => [...prev, { role: "assistant", content: reply || "Sorry, I couldn't get a response. Please try again." }]);
+    const errorMsg = reply === null
+      ? "The AI Assistant is temporarily unavailable. Please try again in a moment."
+      : reply === "auth"
+      ? "Your session has expired. Please sign in again to use the AI Assistant."
+      : null;
+    setMessages(prev => [...prev, { role: "assistant", content: errorMsg || reply }]);
     setLoading(false);
   }
 
@@ -1856,22 +1861,29 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     const allResults = [];
     let useLocal = false;
 
-    for (let i = 0; i < rows.length; i += BATCH) {
-      const batch = rows.slice(i, i + BATCH);
-      if (!useLocal) {
-        const apiResults = await bulkAnalyzeViaAPI(
-          batch.map(r => ({ title: r.title, description: r.description, country: r.country }))
-        );
-        if (apiResults) {
-          allResults.push(...batch.map((r, j) => ({ id: r.id, raw: r.raw, country: r.country, ...apiResults[j] })));
-        } else {
-          useLocal = true;
+    try {
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const batch = rows.slice(i, i + BATCH);
+        if (!useLocal) {
+          const apiResults = await bulkAnalyzeViaAPI(
+            batch.map(r => ({ title: r.title, description: r.description, country: r.country }))
+          );
+          if (apiResults) {
+            allResults.push(...batch.map((r, j) => ({ id: r.id, raw: r.raw, country: r.country, ...apiResults[j] })));
+          } else {
+            useLocal = true;
+            setError("API is unavailable — using local classifier. Results may be less accurate.");
+          }
         }
+        if (useLocal) {
+          allResults.push(...batch.map(r => ({ id: r.id, raw: r.raw, country: r.country, source: "local", ...analyze(r.title, r.description, r.country) })));
+        }
+        setProgress(i + batch.length);
       }
-      if (useLocal) {
-        allResults.push(...batch.map(r => ({ id: r.id, raw: r.raw, country: r.country, source: "local", ...analyze(r.title, r.description, r.country) })));
-      }
-      setProgress(i + batch.length);
+    } catch (err) {
+      setError("Something went wrong while processing your file. Please try again or contact support if the issue continues.");
+      setPhase("error");
+      return;
     }
 
     setResults(allResults);

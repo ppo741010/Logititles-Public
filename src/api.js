@@ -121,11 +121,14 @@ export async function chatViaAPI(message, history = [], context = "", token = ""
       headers,
       body: JSON.stringify({ message, history, context }),
     });
+    if (res.status === 401) return "auth";
+    if (res.status === 429) return "You've sent too many messages. Please wait a moment before trying again.";
+    if (res.status === 503) return "The AI Assistant is temporarily unavailable. Please try again shortly.";
     if (!res.ok) return null;
     const data = await res.json();
     return data.reply;
   } catch {
-    return null;
+    return "Unable to reach the AI Assistant. Please check your connection and try again.";
   }
 }
 
