@@ -1829,18 +1829,21 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
   function applyParsed(parsed) {
     const { headers: hdrs, rows } = parsed;
     if (!rows.length) throw new Error("The file has no data rows.");
-    const limited = rows.slice(0, limits.bulk);
-    const trimmed = rows.length > limits.bulk;
-    setParsedRows(limited); setHeaders(hdrs);
-    if (trimmed) {
+
+    // Check row limit — block if exceeded
+    if (rows.length > limits.bulk) {
       const planLabel = !user ? "guest" : (userPlan?.plan ?? "basic");
-      const upgradeMsg = planLabel === "guest"
-        ? `Guest users are limited to ${limits.bulk} rows. Sign in for more.`
+      const upgradeLink = planLabel === "guest"
+        ? " Sign in for more."
         : planLabel === "basic"
-        ? `Basic plan is limited to ${limits.bulk} rows. Upgrade to Pro for up to 10,000 rows.`
+        ? " Upgrade to Pro for up to 10,000 rows."
         : "";
-      if (upgradeMsg) setError(`⚠ File has ${rows.length} rows — only the first ${limits.bulk} will be processed. ${upgradeMsg}`);
+      setError(`This file has ${rows.length} rows. ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} upload supports up to ${limits.bulk} rows. Please reduce the file size or upgrade.${upgradeLink}`);
+      setPhase("error");
+      return;
     }
+
+    setParsedRows(rows); setHeaders(hdrs);
     const detected = detectColumns(hdrs);
     setColMap({ rawTitle: detected.rawTitle || "", description: detected.description || "", country: detected.country || "" });
     setPhase(detected.rawTitle ? "ready" : "mapping");
