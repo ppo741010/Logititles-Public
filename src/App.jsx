@@ -1523,7 +1523,7 @@ function ResultCharts({ results }) {
     <Card style={{ padding: "20px 24px" }}>
       {noiseRatio > 0.3 && (
         <div style={{ marginBottom: 16, padding: "10px 16px", background: C.amberLight, borderRadius: 8, border: `1px solid ${C.amberBorder}`, fontSize: 12, color: "#78350f" }}>
-          ⚠ <strong>{Math.round(noiseRatio * 100)}% of titles ({noiseCount} rows)</strong> were classified as Other/Noise and excluded from charts. This may indicate non-logistics titles, very short titles, or unrecognised formats. Adding a <strong>description</strong> column may improve accuracy.
+          ⚠ <strong>{Math.round(noiseRatio * 100)}% of titles ({noiseCount} rows)</strong> were classified as Out of scope and excluded from charts. This may indicate non-logistics titles, very short titles, or unrecognised formats. Adding a <strong>description</strong> column may improve accuracy.
         </div>
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -1938,7 +1938,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
             {[
               "Add a country column (NZ or AU) to unlock salary benchmarks and the Salary by Domain chart",
               "Add a description column to improve classification accuracy for ambiguous titles",
-              "Non-logistics titles (retail, teaching, healthcare) will be classified as Other/Noise — this is expected",
+              "Non-logistics titles (retail, teaching, healthcare) will be classified as Out of scope — this is expected",
               "The cleaner the title, the more accurate the output — noise like salary ranges or locations will be stripped automatically",
             ].map((tip, i) => (
               <div key={i} style={{ fontSize: 12, color: "#78350f", display: "flex", gap: 7, alignItems: "flex-start" }}>

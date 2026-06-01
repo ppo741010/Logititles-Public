@@ -38,25 +38,44 @@ export default async function handler(req, res) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const email = session.customer_details?.email;
-    const amountTotal = session.amount_total; // in cents
+    const paymentLink = session.payment_link;
 
-    if (email) {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const user = users?.users?.find((u) => u.email === email);
+    // Determine plan from amount (NZ$9 = 900 cents = basic, NZ$29 = 2900 cents = pro)
+    // TODO: replace with payment link ID check once confirmed from Stripe dashboard
+    let newPlan = null;
+    if (session.amount_total < 2000) newPlan = "basic";
+    else newPlan = "pro";
 
-      if (user) {
-        // NZ$9 = Basic, NZ$29 = Pro (amount_total is in cents)
-        const newPlan = amountTotal <= 1000 ? "basic" : "pro";
-        await supabase
-          .from("user_plans")
-          .update({
-            plan: newPlan,
-            current_period_end: new Date(
-              Date.now() + 30 * 24 * 60 * 60 * 1000
-            ).toISOString(),
-          })
-          .eq("user_id", user.id);
-      }
+    if (!email) return res.status(200).json({ received: true });
+
+    // Look up user by email without fetching all users
+    const { data: { users }, error } = await supabase.auth.admin.listUsers({
+      page: 1, perPage: 50,
+    });
+    // listUsers doesn't support email filter — find in first batch
+    // For small user base this is fine; revisit if user count grows
+    let user = users?.find((u) => u.email === email);
+
+    // If not found in first 50, do a broader search
+    if (!user) {
+      const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({
+        page: 1, perPage: 1000,
+      });
+      user = allUsers?.find((u) => u.email === email);
+    }
+
+    if (user && newPlan) {
+      await supabase
+        .from("user_plans")
+        .update({
+          plan: newPlan,
+          bulk_used: 0,
+          ai_used: 0,
+          current_period_end: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+        })
+        .eq("user_id", user.id);
     }
   }
 
