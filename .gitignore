@@ -31,3 +31,10 @@ SKILL_MAPPER_VALIDATION_REPORT.md
 SKILL_MAPPER_REMEDIATION_GUIDE.md
 PHASE_1_COMPLETE_SUMMARY.md
 
+
+# Test files
+test1.txt
+text.txt
+update.txt
+*.bak
+
