@@ -1101,14 +1101,21 @@ function incrementGuestUsage() {
   return usage.count;
 }
 
-function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin }) {
+function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin,
+  savedTitle = "", savedDesc = "", savedCountry = "", savedResult = null,
+  onSaveState }) {
   const isMobile = useIsMobile();
-  const [title, setTitle]   = useState("");
-  const [desc, setDesc]     = useState("");
-  const [country, setCountry] = useState("");
-  const [result, setResult] = useState(null);
+  const [title, setTitle]   = useState(savedTitle);
+  const [desc, setDesc]     = useState(savedDesc);
+  const [country, setCountry] = useState(savedCountry);
+  const [result, setResult] = useState(savedResult);
   const [loading, setLoading] = useState(false);
   const [guestUsage, setGuestUsage] = useState(() => getGuestUsage());
+
+  // Persist state to parent whenever key fields change
+  useEffect(() => {
+    onSaveState?.({ title, desc, country, result });
+  }, [title, desc, country, result]);
 
   const isGuest = !user;
   const guestBlocked = isGuest && guestUsage.count >= ANALYZER_GUEST_LIMIT;
@@ -3496,6 +3503,7 @@ export default function App() {
   const [bulkResults, setBulkResults]     = useState([]);
   const [showFeedback, setShowFeedback]   = useState(false);
   const [aiContext, setAiContext]          = useState("");
+  const [analyzerState, setAnalyzerState] = useState({ title: "", desc: "", country: "", result: null });
   const [user, setUser]                   = useState(null);
   const [userPlan, setUserPlan]           = useState(null); // null = guest
   const [showAuth, setShowAuth]           = useState(false);
@@ -3613,7 +3621,7 @@ export default function App() {
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
-        {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} />}
+        {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} savedTitle={analyzerState.title} savedDesc={analyzerState.desc} savedCountry={analyzerState.country} savedResult={analyzerState.result} onSaveState={setAnalyzerState} />}
         {page === "bulk"     && <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />}
         {page === "export"   && <ExportPage bulkResults={bulkResults} />}
         {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} bulkResults={bulkResults} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
@@ -3790,7 +3798,7 @@ export default function App() {
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "32px 38px" }}>
-          {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} />}
+          {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} savedTitle={analyzerState.title} savedDesc={analyzerState.desc} savedCountry={analyzerState.country} savedResult={analyzerState.result} onSaveState={setAnalyzerState} />}
           {page === "bulk"     && <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />}
           {page === "export"   && <ExportPage bulkResults={bulkResults} />}
           {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} bulkResults={bulkResults} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
