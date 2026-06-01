@@ -2763,6 +2763,27 @@ function About() {
           </div>
         </Card>
 
+        {/* Status guide */}
+        <Card>
+          <div style={{ fontWeight: 700, fontSize: 14, color: C.text, marginBottom: 14 }}>Understanding Status labels</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[
+              { icon: "✓", tone: C.green,  bg: C.greenLight,  border: C.greenBorder,  label: "Good match",           desc: "The classification is likely usable as-is." },
+              { icon: "⚑", tone: C.amber,  bg: C.amberLight,  border: C.amberBorder,  label: "Review recommended",   desc: "The result is reasonable, but the title or description is ambiguous — check before using in reports." },
+              { icon: "⚠", tone: C.amber,  bg: C.amberLight,  border: C.amberBorder,  label: "Low confidence",       desc: "The title is too generic or unclear to classify reliably. Add a description or more context." },
+              { icon: "✗", tone: C.red,    bg: C.redLight,    border: C.redBorder,    label: "Out of scope",         desc: "The input does not appear to be a logistics-related role and has been excluded from analysis." },
+            ].map(({ icon, tone, bg, border, label, desc }) => (
+              <div key={label} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: bg, border: `1px solid ${border}` }}>
+                <span style={{ color: tone, fontWeight: 700, fontSize: 13, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: tone }}>{label}</div>
+                  <div style={{ fontSize: 12, color: C.textSub, marginTop: 3, lineHeight: 1.5 }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
         {/* Feedback */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", background: C.bg, borderRadius: 12, border: `1px solid ${C.border}` }}>
           <div>
