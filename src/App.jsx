@@ -638,22 +638,40 @@ function getSkills(domain, description) {
 
 function analyze(rawTitle, description, country) {
   const clean = cleanTitle(rawTitle);
-  const { domain, confidence, source, matchedKeywords = [], noiseReason, noiseKeyword } = classify(rawTitle, description);
-  const seniority = domain === "Other/Noise" ? "Review Required" : getSeniority(rawTitle);
-  const nature    = domain === "Other/Noise" ? "Review Required" : getWorkNature(rawTitle);
-  const skills    = getSkills(domain, description);
+  const { domain: rawDomain, confidence, source, matchedKeywords = [], noiseReason, noiseKeyword } = classify(rawTitle, description);
+
+  const outOfScope = rawDomain === "Other/Noise" || rawDomain === "Out of scope";
+  const domain = outOfScope ? "Out of scope" : rawDomain;
+
+  const seniority = outOfScope ? "Review Required" : getSeniority(rawTitle);
+  const nature    = outOfScope ? "Review Required" : getWorkNature(rawTitle);
+  const skills    = outOfScope ? [] : getSkills(domain, description);
+
   const flags = [];
-  if (domain === "Other/Noise") flags.push("Title does not match a known logistics domain — verify before use");
+  if (outOfScope)
+    flags.push("This does not appear to be a logistics-related job title.");
+  else if (source === "fuzzy_generic")
+    flags.push("Title is too generic. Add logistics, warehouse, freight, transport, procurement, or supply chain context for better classification.");
   if (source === "description") flags.push("Domain inferred from description only — title keyword was ambiguous");
-  if (!country) flags.push("Country not provided — seniority inference may be less accurate");
-  if (description.length < 30) flags.push("Description is short — output is based mainly on title text");
+  if (!outOfScope && description.length < 30) flags.push("Description is short — output is based mainly on title text");
   if (rawTitle.length > 60) flags.push("Title is long — may contain location, shift, or contract noise");
+
   const combined = (rawTitle + " " + description).toLowerCase();
   for (const { a, b, flag } of CROSS_FUNCTIONAL_PAIRS)
     if (combined.includes(a) && combined.includes(b)) flags.push(flag);
   const hasCrossFlag = CROSS_FUNCTIONAL_PAIRS.some(({ a, b }) => combined.includes(a) && combined.includes(b));
-  const needsReview = domain === "Other/Noise" || confidence < 70 || hasCrossFlag;
-  return { cleanTitle: clean, domain, nature, seniority, skills, confidence, flags, hasCrossFlag, needsReview, matchedKeywords, noiseReason, noiseKeyword };
+  const needsReview = outOfScope || confidence < 70 || hasCrossFlag;
+
+  // salary_note: separate from classification flags
+  let salaryNote = null;
+  if (outOfScope)
+    salaryNote = "Salary benchmark is not available because this title appears to be outside the logistics scope.";
+  else if (confidence < 55)
+    salaryNote = "Salary benchmark unavailable for low-confidence matches.";
+  else if (!country)
+    salaryNote = "Select New Zealand or Australia to view salary reference.";
+
+  return { cleanTitle: clean, domain, nature, seniority, skills, confidence, flags, hasCrossFlag, needsReview, out_of_scope: outOfScope, salaryNote, matchedKeywords, noiseReason, noiseKeyword };
 }
 
 // ── File parsing ─────────────────────────────────────────────────────────────
@@ -727,10 +745,14 @@ function detectColumns(headers) {
 
 const EXPORT_FIELDS = ["raw_title","clean_title","domain","work_nature","seniority","confidence","status","skills","flags","needs_review","country","salary_range","salary_median"];
 
+function isOutOfScope(r) {
+  return r.out_of_scope || r.domain === "Other/Noise" || r.domain === "Out of scope";
+}
+
 function getStatusLabel(r) {
-  if (r.domain === "Other/Noise") return "Out of scope";
-  if (r.confidence < 55)          return "Low confidence";
-  if (r.needsReview)              return "Review recommended";
+  if (isOutOfScope(r))   return "Out of scope";
+  if (r.confidence < 55) return "Low confidence";
+  if (r.needsReview)     return "Review recommended";
   return "Good match";
 }
 
@@ -923,7 +945,7 @@ function ConfidenceBar({ value }) {
 function domainTone(d) {
   return { "Warehouse":"blue","Transport":"blue","Freight Forwarding":"blue","Planning":"green",
            "Operations":"blue","Finance":"amber","Sales":"green","IT Support":"slate",
-           "Business Administration":"slate","Other/Noise":"red" }[d] || "gray";
+           "Business Administration":"slate","Other/Noise":"red","Out of scope":"red" }[d] || "gray";
 }
 
 function seniorityTone(label) {
@@ -1174,25 +1196,17 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin }) {
                   ⚠ API unavailable — result from local classifier. Accuracy may differ from the Python engine.
                 </div>
               )}
-              {result.domain === "Other/Noise" && (
-                <div style={{ background: "#fffbeb", border: "1.5px solid #fcd34d", borderRadius: 10, padding: "16px 18px" }}>
-                  <div style={{ fontWeight: 700, color: "#92400e", fontSize: 13, marginBottom: 6 }}>This title doesn't appear to be a logistics role</div>
-                  {result.noiseReason === "fuzzy_noise" ? (
-                    <div style={{ fontSize: 12, color: "#78350f", lineHeight: 1.7 }}>
-                      The term <span style={{ fontFamily: "monospace", background: "#fef3c7", padding: "1px 5px", borderRadius: 4 }}>{result.noiseKeyword}</span> suggests this role is outside the logistics and supply chain domain.
-                      <br />
-                      <span style={{ color: "#92400e" }}>What you can do:</span> If this is a logistics-adjacent role, try adding a job description to help the classifier. Otherwise, you can exclude it from your dataset before exporting.
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 12, color: "#78350f", lineHeight: 1.7 }}>
-                      No logistics-related keywords were found in this title or description. This may mean the role is outside the logistics and supply chain domain, or the title is too short or abbreviated to classify.
-                      <br />
-                      <span style={{ color: "#92400e" }}>What you can do:</span> Try adding a job description to give the classifier more context, or check if the title is from a logistics or supply chain role.
-                    </div>
-                  )}
+              {isOutOfScope(result) && (
+                <div style={{ background: "#fef2f2", border: "1.5px solid #fca5a5", borderRadius: 10, padding: "16px 18px" }}>
+                  <div style={{ fontWeight: 700, color: "#991b1b", fontSize: 13, marginBottom: 6 }}>✗ Out of scope — not a logistics role</div>
+                  <div style={{ fontSize: 12, color: "#7f1d1d", lineHeight: 1.7 }}>
+                    No logistics or supply chain signal was found in this title or description.
+                    <br />
+                    <span style={{ color: "#991b1b" }}>What you can do:</span> If this is actually a logistics-adjacent role, try adding a job description with relevant context.
+                  </div>
                 </div>
               )}
-              <Card highlight={result.domain !== "Other/Noise"}>
+              <Card highlight={!isOutOfScope(result)}>
                 <FieldLabel>Clean Title</FieldLabel>
                 <div style={{ fontSize: 19, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{result.cleanTitle}</div>
                 {result.cleanTitle.toLowerCase().replace(/\s/g,"") !== title.toLowerCase().replace(/\s/g,"") && (
@@ -1236,10 +1250,10 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin }) {
                     Market estimate only. Not financial or HR advice. Actual salaries vary by employer, experience, and location.
                   </div>
                 </Card>
-              ) : country === "" && result.domain !== "Other/Noise" ? (
-                <Card style={{ padding: 18, opacity: 0.7 }}>
+              ) : (result.salaryNote || result.salary_note) ? (
+                <Card style={{ padding: 18, opacity: 0.75 }}>
                   <FieldLabel>Salary Benchmark</FieldLabel>
-                  <div style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>Select NZ or AU above to see salary reference</div>
+                  <div style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>{result.salaryNote || result.salary_note}</div>
                 </Card>
               ) : null}
               <Card style={{ padding: 18 }}>
@@ -1352,9 +1366,9 @@ function ResultCharts({ results }) {
     // ── Page 1: Summary ──────────────────────────────────────────────
     const today = new Date().toLocaleDateString("en-NZ", { year: "numeric", month: "long", day: "numeric" });
     const total = results.length;
-    const structured = results.filter(r => !r.needsReview && r.domain !== "Other/Noise").length;
-    const review = results.filter(r => r.needsReview && r.domain !== "Other/Noise").length;
-    const outOfScope = results.filter(r => r.domain === "Other/Noise").length;
+    const structured = results.filter(r => !r.needsReview && !isOutOfScope(r)).length;
+    const review = results.filter(r => r.needsReview && !isOutOfScope(r)).length;
+    const outOfScope = results.filter(r => isOutOfScope(r)).length;
 
     const domainCounts = {};
     const skillCounts = {};
@@ -1362,7 +1376,7 @@ function ResultCharts({ results }) {
     results.forEach(r => {
       if (r.domain) domainCounts[r.domain] = (domainCounts[r.domain] || 0) + 1;
       (r.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; });
-      if (r.salaryBenchmark?.median && r.domain && r.domain !== "Other/Noise") {
+      if (r.salaryBenchmark?.median && r.domain && !isOutOfScope(r)) {
         if (!domainSalary[r.domain]) domainSalary[r.domain] = [];
         domainSalary[r.domain].push(r.salaryBenchmark.median);
       }
@@ -1475,7 +1489,7 @@ function ResultCharts({ results }) {
     if (r.domain) domainCounts[r.domain] = (domainCounts[r.domain] || 0) + 1;
     if (r.seniority) seniorityCounts[r.seniority] = (seniorityCounts[r.seniority] || 0) + 1;
     (r.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; });
-    if (r.salaryBenchmark?.median && r.domain && r.domain !== "Other/Noise") {
+    if (r.salaryBenchmark?.median && r.domain && !isOutOfScope(r)) {
       if (!domainSalary[r.domain]) domainSalary[r.domain] = [];
       domainSalary[r.domain].push(r.salaryBenchmark.median);
     }
@@ -1502,7 +1516,7 @@ function ResultCharts({ results }) {
     }))
     .sort((a, b) => b.median - a.median);
 
-  const noiseCount = results.filter(r => r.domain === "Other/Noise").length;
+  const noiseCount = results.filter(r => isOutOfScope(r)).length;
   const noiseRatio = results.length > 0 ? noiseCount / results.length : 0;
 
   return (
@@ -1616,7 +1630,7 @@ function BulkAIBubble({ results }) {
     const topDomains = Object.entries(domainCounts).sort((a,b) => b[1]-a[1]).map(([d,c]) => `${d}: ${c}`).join(", ");
     const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,8).map(([s,c]) => `${s}(${c})`).join(", ");
     const total = results.length;
-    const noise = results.filter(r => r.domain === "Other/Noise").length;
+    const noise = results.filter(r => isOutOfScope(r)).length;
     return `Dataset summary: ${total} records total, ${noise} Other/Noise. Domain breakdown: ${topDomains}. Top skills: ${topSkills}.`;
   }
 
@@ -1733,8 +1747,8 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
 
   // Summary stats
   const total          = results.length;
-  const outOfScope     = results.filter(r => r.domain === "Other/Noise").length;
-  const reviewRequired = results.filter(r => r.needsReview && r.domain !== "Other/Noise").length;
+  const outOfScope     = results.filter(r => isOutOfScope(r)).length;
+  const reviewRequired = results.filter(r => r.needsReview && !isOutOfScope(r)).length;
   const structured     = results.filter(r => !r.needsReview).length;
 
   async function handleFile(file) {
@@ -2198,17 +2212,17 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
                 {(phase === "done"
                   ? results.filter(r => {
                       if (statusFilter === "all") return true;
-                      if (statusFilter === "oos")    return r.domain === "Other/Noise";
-                      if (statusFilter === "low")    return r.domain !== "Other/Noise" && r.confidence < 55;
-                      if (statusFilter === "review") return r.domain !== "Other/Noise" && r.confidence >= 55 && r.needsReview;
-                      if (statusFilter === "good")   return r.domain !== "Other/Noise" && !r.needsReview && r.confidence >= 55;
+                      if (statusFilter === "oos")    return isOutOfScope(r);
+                      if (statusFilter === "low")    return !isOutOfScope(r) && r.confidence < 55;
+                      if (statusFilter === "review") return !isOutOfScope(r) && r.confidence >= 55 && r.needsReview;
+                      if (statusFilter === "good")   return !isOutOfScope(r) && !r.needsReview && r.confidence >= 55;
                       return true;
                     })
                   : phase === "previewing"
                   ? cleanPreviews.map((p, i) => ({ id: i + 1, raw: p.raw, clean: p.clean, original: p.original }))
                   : parsedRows.slice(0, 12).map((r, i) => ({ id: i + 1, raw: r[colMap.rawTitle] || "(empty)" }))
                 ).map((row, i) => {
-                  const isOOS = phase === "done" && row.domain === "Other/Noise";
+                  const isOOS = phase === "done" && isOutOfScope(row);
                   const needsRev = phase === "done" && row.needsReview;
                   const autoCleaned = phase === "previewing" && row.raw !== row.original;
                   const manualEdited = phase === "previewing" && row.clean !== row.original;
@@ -2497,7 +2511,7 @@ function TitleCleaner() {
                 return (
                   <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? C.card : C.bg }}>
                     <td style={{ padding: "13px 18px", fontFamily: "monospace", fontSize: 12, color: "#6b1a1a", background: "#fff8f8", maxWidth: 220 }}>{res.raw}</td>
-                    <td style={{ padding: "13px 18px", fontWeight: 600, color: res.domain === "Other/Noise" ? C.red : "#14532d" }}>
+                    <td style={{ padding: "13px 18px", fontWeight: 600, color: isOutOfScope(res) ? C.red : "#14532d" }}>
                       {res.cleanTitle}
                       {changed && <span style={{ display: "block", fontSize: 10, color: C.textMuted, fontWeight: 400, marginTop: 2 }}>cleaned</span>}
                     </td>

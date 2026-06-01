@@ -120,6 +120,24 @@ CROSS_FUNCTIONAL_PAIRS = [
      "Cross-functional signal: Customer Service + Dispatch — may bridge Sales and Transport"),
 ]
 
+# Keywords that indicate a logistics-related role; absence → likely out of scope
+_LOGISTICS_SIGNALS: frozenset[str] = frozenset({
+    "logistics", "warehouse", "supply chain", "freight", "transport",
+    "shipping", "dispatch", "distribution", "procurement", "inventory",
+    "forklift", "driver", "courier", "customs", "import", "export",
+    "3pl", "4pl", "wms", "tms", "fleet", "carrier", "haulage",
+    "linehaul", "depot", "dock", "picking", "packing", "storeperson",
+    "receiving", "planner", "buyer", "purchasing", "operations coordinator",
+    "supply", "fulfillment", "fulfilment",
+})
+
+# Single words that are too generic to classify without logistics context
+_GENERIC_TITLE_WORDS: frozenset[str] = frozenset({
+    "coordinator", "assistant", "manager", "officer", "administrator",
+    "supervisor", "specialist", "analyst", "consultant", "director",
+    "lead", "support", "executive", "head",
+})
+
 REMOVE_PHRASES = [
     "immediate start", "apply now", "great opportunity", "exciting opportunity",
     "career growth", "wanted", "needed", "join our team", "above award rate",
@@ -394,47 +412,100 @@ def analyze(raw_title: str, description: str = '', country: str = '') -> dict:
     clean = clean_title(raw_title)
     result = classify(raw_title, description)
 
-    # Step 4 — AI fallback for truly unmatched titles
-    ai_used = False
-    if result["source"] == "unmatched":
+    tl = raw_title.lower()
+    dl = description.lower()
+    has_logistics = any(sig in tl or sig in dl for sig in _LOGISTICS_SIGNALS)
+    title_words   = set(tl.split())
+    is_generic    = bool(title_words) and title_words.issubset(_GENERIC_TITLE_WORDS)
+
+    # Step 4 — out-of-scope gate or AI fallback
+    ai_used      = False
+    out_of_scope = False
+
+    if not has_logistics and result["source"] in ("unmatched", "description"):
+        if is_generic:
+            # Generic title (e.g. bare "Coordinator") without any logistics context → low confidence
+            result = {
+                "domain":           "Operations",
+                "confidence":       42,
+                "source":           "fuzzy_generic",
+                "matched_keywords": [],
+            }
+        else:
+            # Non-logistics title (e.g. "Apple", "Doctor") → out of scope, skip AI
+            out_of_scope = True
+            result = {
+                "domain": "Out of scope", "confidence": 20,
+                "source": "out_of_scope", "matched_keywords": [],
+            }
+    elif result["source"] == "unmatched":
+        # Has logistics signal but no rule match → try AI
         ai_result = _ai_classify(raw_title, description)
         if ai_result and ai_result["domain"] != "Other/Noise":
             result = ai_result
             ai_used = True
+    elif result["source"] == "fuzzy" and is_generic and not has_logistics:
+        # Fuzzy-matched generic title without logistics context → low confidence
+        result = {
+            "domain":           result["domain"],
+            "confidence":       42,
+            "source":           "fuzzy_generic",
+            "matched_keywords": result.get("matched_keywords", []),
+        }
 
-    domain    = result["domain"]
+    domain     = result["domain"]
     confidence = result["confidence"]
-    source    = result["source"]
+    source     = result["source"]
     matched_kw = result.get("matched_keywords", [])
     noise_reason  = result.get("noise_reason")
     noise_keyword = result.get("noise_keyword")
     ai_reason     = result.get("ai_reason")
 
-    # Skills + level: try exact map lookup first, then fallback
+    # Unify out_of_scope flag
+    out_of_scope = out_of_scope or domain in ("Out of scope", "Other/Noise")
+
+    # Skills + level
     map_entry = _map_lookup(raw_title) or _map_lookup(clean)
-    if map_entry and domain != "Other/Noise":
-        skills   = [s.strip() for s in map_entry["skills"].split(",") if s.strip()][:6]
+    if map_entry and not out_of_scope:
+        skills    = [s.strip() for s in map_entry["skills"].split(",") if s.strip()][:6]
         seniority = _LEVEL_DISPLAY.get(map_entry["level"], get_seniority(raw_title))
     else:
-        skills    = get_skills(domain, description)
-        seniority = "Review Required" if domain == "Other/Noise" else get_seniority(raw_title)
+        skills    = [] if out_of_scope else get_skills(domain, description)
+        seniority = "Review Required" if out_of_scope else get_seniority(raw_title)
 
-    work_nature      = "Review Required" if domain == "Other/Noise" else get_work_nature(raw_title)
-    salary_benchmark = get_salary_benchmark(domain, country) if domain != "Other/Noise" else None
+    work_nature = "Review Required" if out_of_scope else get_work_nature(raw_title)
 
-    # Flags
+    # Salary — only show for in-scope titles with sufficient confidence
+    if out_of_scope or confidence < 55:
+        salary_benchmark = None
+    else:
+        salary_benchmark = get_salary_benchmark(domain, country)
+
+    # salary_note: informational message separate from classification flags
+    if out_of_scope:
+        salary_note = "Salary benchmark is not available because this title appears to be outside the logistics scope."
+    elif confidence < 55:
+        salary_note = "Salary benchmark unavailable for low-confidence matches."
+    elif not country:
+        salary_note = "Select New Zealand or Australia to view salary reference."
+    elif salary_benchmark is None:
+        salary_note = "Country not recognised — use NZ or AU for salary benchmark."
+    else:
+        salary_note = None
+
+    # Review flags — classification quality issues only (no salary/country hints here)
     flags = []
-    if domain == "Other/Noise":
+    if out_of_scope:
+        flags.append("This does not appear to be a logistics-related job title.")
+    elif source == "fuzzy_generic":
+        flags.append("Title is too generic. Add logistics, warehouse, freight, transport, procurement, or supply chain context for better classification.")
+    elif domain == "Other/Noise":
         flags.append("Title does not match a known logistics domain — verify before use")
     if ai_used:
         flags.append("Domain inferred by AI — rule-based match not found")
     if source == "description":
         flags.append("Domain inferred from description only — title keyword was ambiguous")
-    if not country:
-        flags.append("Provide country (NZ or AU) to see salary benchmark")
-    elif salary_benchmark is None:
-        flags.append("Country not recognised — use NZ or AU for salary benchmark")
-    if len(description) < 30:
+    if not out_of_scope and len(description) < 30:
         flags.append("Description is short — output is based mainly on title text")
     if len(raw_title) > 60:
         flags.append("Title is long — may contain location, shift, or contract noise")
@@ -445,7 +516,7 @@ def analyze(raw_title: str, description: str = '', country: str = '') -> dict:
             flags.append(flag)
 
     has_cross_flag = any(a in combined and b in combined for a, b, _ in CROSS_FUNCTIONAL_PAIRS)
-    needs_review   = domain == "Other/Noise" or confidence < 70 or has_cross_flag
+    needs_review   = out_of_scope or confidence < 70 or has_cross_flag
 
     return {
         "raw_title":         raw_title,
@@ -456,13 +527,15 @@ def analyze(raw_title: str, description: str = '', country: str = '') -> dict:
         "skills":            skills,
         "confidence":        confidence,
         "salary_benchmark":  salary_benchmark,
+        "salary_note":       salary_note,
         "matched_keywords":  matched_kw,
         "flags":             flags,
-        "has_cross_flag":   has_cross_flag,
-        "needs_review":     needs_review,
-        "noise_reason":     noise_reason,
-        "noise_keyword":    noise_keyword,
-        "ai_used":          ai_used,
-        "ai_reason":        ai_reason,
-        "country":          country,
+        "has_cross_flag":    has_cross_flag,
+        "needs_review":      needs_review,
+        "out_of_scope":      out_of_scope,
+        "noise_reason":      noise_reason,
+        "noise_keyword":     noise_keyword,
+        "ai_used":           ai_used,
+        "ai_reason":         ai_reason,
+        "country":           country,
     }
