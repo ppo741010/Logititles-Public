@@ -2358,6 +2358,7 @@ function SkillMapper() {
   const isMobile = useIsMobile();
   const [input, setInput]     = useState("");
   const [results, setResults] = useState([]);
+  const [hasJobTitleWarning, setHasJobTitleWarning] = useState(false);
 
   const TOO_BROAD = new Set([
     "software","system","systems","tool","tools","platform","platforms",
@@ -2366,13 +2367,32 @@ function SkillMapper() {
     "database","data","analytics","reporting","communication","planning",
   ]);
 
+  const JOB_TITLE_KEYWORDS = new Set([
+    "manager","director","officer","coordinator","analyst","specialist","engineer",
+    "supervisor","lead","manager","administrator","architect","consultant",
+    "advisor","associate","assistant","representative","driver","operator",
+    "technician","mechanic","clerk","worker","agent","executive","inspector",
+  ]);
+
+  function looksLikeJobTitle(phrase) {
+    const words = phrase.split(/\s+/);
+    // Job titles are typically 2-4 words and contain job title keywords
+    if (words.length < 2 || words.length > 4) return false;
+    // Check if last word is a job title keyword
+    const lastWord = words[words.length - 1];
+    return JOB_TITLE_KEYWORDS.has(lastWord);
+  }
+
   function mapSkills() {
     const phrases = input.split(/[,\n]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
+    const jobTitleCount = phrases.filter(looksLikeJobTitle).length;
+    setHasJobTitleWarning(jobTitleCount > 0);
     setResults(phrases.map(phrase => {
       const exact = Object.entries(SKILL_SYNONYMS).find(([k]) => k === phrase);
       const match = exact ?? Object.entries(SKILL_SYNONYMS).find(([k]) => phrase.includes(k) && k.length > 3);
       const tooBroad = !match && TOO_BROAD.has(phrase);
-      return { raw: phrase, normalized: match ? match[1] : null, tooBroad };
+      const looksLikeTitle = looksLikeJobTitle(phrase);
+      return { raw: phrase, normalized: match ? match[1] : null, tooBroad, looksLikeTitle };
     }));
   }
 
@@ -2424,6 +2444,11 @@ function SkillMapper() {
             ? <div style={{ color: C.textMuted, fontSize: 13, paddingTop: 60, textAlign: "center", opacity: 0.7 }}>Results will appear here</div>
             : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {hasJobTitleWarning && (
+                  <div style={{ padding: "12px 14px", borderRadius: 8, background: "#fef3c7", border: "1px solid #fcd34d", fontSize: 12.5, color: "#78350f", lineHeight: 1.6 }}>
+                    <strong>⚠ Looks like you entered job titles.</strong> Skill Mapper is for skill phrases (e.g., "WMS", "Demand Forecasting"). Use <strong>Single Analyzer</strong> or <strong>Title Cleaner</strong> for job titles.
+                  </div>
+                )}
                 {results.map((r, i) => (
                   <div key={i} style={{ padding: "10px 14px", borderRadius: 8, background: r.normalized ? C.greenLight : r.tooBroad ? C.amberLight : C.redLight, border: `1px solid ${r.normalized ? C.greenBorder : r.tooBroad ? C.amberBorder : C.redBorder}` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
