@@ -2359,6 +2359,9 @@ function SkillMapper() {
   const [input, setInput]     = useState("");
   const [results, setResults] = useState([]);
   const [hasJobTitleWarning, setHasJobTitleWarning] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackData, setFeedbackData] = useState({ rating: "", comment: "" });
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const TOO_BROAD = new Set([
     "software","system","systems","tool","tools","platform","platforms",
@@ -2394,6 +2397,31 @@ function SkillMapper() {
       const looksLikeTitle = looksLikeJobTitle(phrase);
       return { raw: phrase, normalized: match ? match[1] : null, tooBroad, looksLikeTitle };
     }));
+  }
+
+  async function submitFeedback() {
+    if (!feedbackData.rating || !feedbackData.comment.trim()) return;
+    setFeedbackLoading(true);
+    try {
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: input.slice(0, 100),
+          result: results.filter(r => r.normalized).length > 0 ? "matched" : "unmatched",
+          rating: feedbackData.rating,
+          comment: feedbackData.comment,
+          page: "skill_mapper",
+        }),
+      });
+      if (response.ok) {
+        setShowFeedback(false);
+        setFeedbackData({ rating: "", comment: "" });
+      }
+    } catch (error) {
+      console.error("Feedback error:", error);
+    }
+    setFeedbackLoading(false);
   }
 
   function exportResults() {
@@ -2479,6 +2507,40 @@ function SkillMapper() {
                   <strong>Canonical label</strong> = the standardized output used in export files.<br />
                   <strong>Common variants</strong> like "wms software", "warehouse management system", "wms" all map to the same canonical label.
                 </div>
+
+                {!showFeedback ? (
+                  <button onClick={() => setShowFeedback(true)}
+                    style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px dashed #d1d5db", background: "transparent", color: C.textMuted, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>
+                    📝 Help us improve — share your feedback
+                  </button>
+                ) : (
+                  <div style={{ padding: "12px 14px", borderRadius: 8, background: "#f0fdf4", border: `1px solid #bbf7d0` }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 10 }}>Quick feedback</div>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                      <button onClick={() => setFeedbackData({...feedbackData, rating: "up"})}
+                        style={{ flex: 1, padding: "6px", borderRadius: 6, border: `2px solid ${feedbackData.rating === "up" ? "#16a34a" : "#e5e7eb"}`, background: feedbackData.rating === "up" ? "#f0fdf4" : "transparent", color: "#16a34a", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+                        👍 Made sense
+                      </button>
+                      <button onClick={() => setFeedbackData({...feedbackData, rating: "down"})}
+                        style={{ flex: 1, padding: "6px", borderRadius: 6, border: `2px solid ${feedbackData.rating === "down" ? "#dc2626" : "#e5e7eb"}`, background: feedbackData.rating === "down" ? "#fef2f2" : "transparent", color: "#dc2626", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+                        👎 Confusing
+                      </button>
+                    </div>
+                    <textarea value={feedbackData.comment} onChange={e => setFeedbackData({...feedbackData, comment: e.target.value})}
+                      placeholder="What was confusing or missing?"
+                      style={{ width: "100%", padding: "8px", borderRadius: 6, border: `1px solid #d1d5db`, fontSize: 12, fontFamily: "inherit", resize: "vertical", height: 60, boxSizing: "border-box" }} />
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <button onClick={submitFeedback} disabled={!feedbackData.rating || !feedbackData.comment.trim() || feedbackLoading}
+                        style={{ flex: 1, padding: "6px", borderRadius: 6, border: "none", background: feedbackData.rating && feedbackData.comment.trim() ? "#16a34a" : "#d1d5db", color: "#fff", cursor: feedbackData.rating && feedbackData.comment.trim() ? "pointer" : "default", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
+                        {feedbackLoading ? "…" : "Submit"}
+                      </button>
+                      <button onClick={() => { setShowFeedback(false); setFeedbackData({ rating: "", comment: "" }); }}
+                        style={{ flex: 1, padding: "6px", borderRadius: 6, border: `1px solid #d1d5db`, background: "transparent", color: C.textMuted, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
         </Card>

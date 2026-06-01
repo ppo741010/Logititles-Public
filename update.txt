@@ -1,0 +1,139 @@
+可以了。你現在主要功能和邏輯都已經到一個可以 beta 測試的狀態。接下來不要再一直加新功能，重點是穩定性、安全性、付費流程、使用者回饋。
+
+我會提醒你注意這幾件事：
+
+1. Stripe Live mode 不要急著大公開
+
+你可以切 Live mode，但先做 soft launch。
+
+先自己用真實付款測：
+
+Guest → Basic 付款成功後，plan 變 Basic
+Basic → Pro 付款成功後，plan 變 Pro
+付款取消後，plan 不會升級
+付款失敗後，plan 不會升級
+Pro 付款後 AI credits / bulk limits 正常
+
+最重要的是：成功付款才解鎖，取消付款不能解鎖。
+
+2. Supabase 權限要小心
+
+你要確認 Supabase 不會讓使用者看到別人的資料。
+
+尤其是：
+
+uploaded files
+classification results
+user plan
+payment status
+feedback records
+
+如果你有開 RLS，要確認每個 table 都有正確 policy。
+如果還沒完全確定，至少不要存太敏感的資料。
+
+3. 不要儲存太多原始資料
+
+因為你的工具會處理 job title / description，雖然不一定是個資，但使用者可能會不小心上傳公司內部資料。
+
+建議你：
+
+明確提醒不要上傳 confidential data
+測試資料可以暫存，但不要長期保存太多原始 description
+之後可以加「Delete my uploaded data」或自動清除機制
+
+4. Out of scope / Low confidence 要持續收集 feedback
+
+你現在做了 👍 / 👎，這很好。
+
+之後你要特別看：
+
+哪些 Good match 被按 👎
+哪些 Out of scope 其實應該是物流
+哪些 generic title 常常被誤判
+哪些 salary benchmark 被使用者覺得奇怪
+
+這些 feedback 會比你自己一直猜更有價值。
+
+5. Basic / Pro plan 要保持一致
+
+你要確認網站、app、Stripe、Supabase 四邊都一致：
+
+項目	要一致
+Landing page	Basic NZ$9 one-time, Pro NZ$29/month
+App UI	顯示同樣方案限制
+Stripe	價格和付款類型一致
+Supabase	plan 狀態一致
+Code logic	Guest 100 rows, Basic 1,000 rows, Pro 10,000 rows
+
+只要有一邊不一致，使用者就會困惑。
+
+6. Pro 取消訂閱後的邏輯要先想好
+
+這個之後很重要。
+
+例如 Pro 到期後，你要讓使用者變成：
+
+Basic？
+Guest？
+Expired Pro？
+保留結果但不能再用 AI？
+
+我建議先設計成：
+
+Pro 到期後 → 降回 Basic 或 Free，AI Assistant 停用。
+
+但這部分等真的有人訂閱後再完善也可以。
+
+7. 錯誤訊息要友善
+
+例如：
+
+CSV 格式錯誤
+row 超過限制
+AI credits 用完
+Stripe 付款取消
+network error
+classification failed
+
+都不要只顯示 technical error。
+要用使用者看得懂的句子，例如：
+
+This file has more rows than your current plan allows. Please reduce the file size or upgrade your plan.
+
+這會讓產品感提升很多。
+
+8. 現在不要再大改首頁
+
+Landing page 現在已經足夠。
+如果再一直加動畫、互動、更多文字，反而會變亂。
+
+你現在真正該做的是：
+
+測 Guest
+測 Basic
+測 Pro
+測 Stripe Live
+找 3–5 個人試用
+收 feedback
+9. 發給 Carel / Rob 前要說清楚定位
+
+你要避免讓他們以為這是 LINZ 官方產品。
+
+可以說：
+
+This is an independent beta project I built after my internship, inspired by the data pipeline work. I’m mainly looking for feedback from people who work with logistics job data.
+
+這樣最安全，也最自然。
+
+10. 目前最終狀態判斷
+
+我覺得你現在已經可以進入：
+
+Private beta / soft launch
+
+還不是：
+
+Full public launch
+
+意思是：
+可以給少數相關的人用、可以收 feedback、可以測付款，但先不要大規模宣傳成正式成熟 SaaS。
