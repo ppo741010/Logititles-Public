@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import * as XLSX from "xlsx";
-import { analyzeViaAPI, bulkAnalyzeViaAPI, cleanPreviewViaAPI, submitFeedback, chatViaAPI, startKeepAlive } from "./api.js";
+import { analyzeViaAPI, bulkAnalyzeViaAPI, cleanPreviewViaAPI, chatViaAPI, startKeepAlive } from "./api.js";
 startKeepAlive();
 import skillConfig from "./skill_normalize.json";
 import { supabase } from "./supabase.js";
@@ -2403,20 +2403,22 @@ function SkillMapper() {
     if (!feedbackData.rating || !feedbackData.comment.trim()) return;
     setFeedbackLoading(true);
     try {
-      const response = await fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Directly save to Supabase (no API needed for dev)
+      const { error } = await supabase.from("feedback").insert([
+        {
           title: input.slice(0, 100),
           result: results.filter(r => r.normalized).length > 0 ? "matched" : "unmatched",
           rating: feedbackData.rating,
           comment: feedbackData.comment,
           page: "skill_mapper",
-        }),
-      });
-      if (response.ok) {
+        },
+      ]);
+      if (!error) {
         setShowFeedback(false);
         setFeedbackData({ rating: "", comment: "" });
+        console.log("✅ Feedback saved to Supabase");
+      } else {
+        console.error("Supabase error:", error);
       }
     } catch (error) {
       console.error("Feedback error:", error);
