@@ -25,9 +25,11 @@ export async function analyzeViaAPI(title, description = "", country = "") {
       flags:            data.flags,
       hasCrossFlag:     data.has_cross_flag,
       needsReview:      data.needs_review,
+      out_of_scope:     data.out_of_scope ?? false,
       noiseReason:      data.noise_reason,
       noiseKeyword:     data.noise_keyword,
       salaryBenchmark:  data.salary_benchmark ?? null,
+      salaryNote:       data.salary_note ?? null,
       country:          data.country,
       source:           "api",
     };
@@ -60,9 +62,11 @@ export async function bulkAnalyzeViaAPI(rows) {
       flags:            d.flags,
       hasCrossFlag:     d.has_cross_flag,
       needsReview:      d.needs_review,
+      out_of_scope:     d.out_of_scope ?? false,
       noiseReason:      d.noise_reason,
       noiseKeyword:     d.noise_keyword,
       salaryBenchmark:  d.salary_benchmark ?? null,
+      salaryNote:       d.salary_note ?? null,
       country:          d.country,
       source:           "api",
     }));
