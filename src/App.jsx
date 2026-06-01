@@ -1502,11 +1502,14 @@ function ResultCharts({ results }) {
   const skillCounts = {};
   const domainSalary = {};
 
+  const noiseCount = results.filter(r => isOutOfScope(r)).length;
+
   results.forEach(r => {
+    if (isOutOfScope(r)) return; // exclude out-of-scope from all charts
     if (r.domain) domainCounts[r.domain] = (domainCounts[r.domain] || 0) + 1;
     if (r.seniority) seniorityCounts[r.seniority] = (seniorityCounts[r.seniority] || 0) + 1;
     (r.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; });
-    if (r.salaryBenchmark?.median && r.domain && !isOutOfScope(r)) {
+    if (r.salaryBenchmark?.median && r.domain) {
       if (!domainSalary[r.domain]) domainSalary[r.domain] = [];
       domainSalary[r.domain].push(r.salaryBenchmark.median);
     }
@@ -1533,14 +1536,14 @@ function ResultCharts({ results }) {
     }))
     .sort((a, b) => b.median - a.median);
 
-  const noiseCount = results.filter(r => isOutOfScope(r)).length;
   const noiseRatio = results.length > 0 ? noiseCount / results.length : 0;
 
   return (
     <Card style={{ padding: "20px 24px" }}>
-      {noiseRatio > 0.3 && (
-        <div style={{ marginBottom: 16, padding: "10px 16px", background: C.amberLight, borderRadius: 8, border: `1px solid ${C.amberBorder}`, fontSize: 12, color: "#78350f" }}>
-          ⚠ <strong>{Math.round(noiseRatio * 100)}% of titles ({noiseCount} rows)</strong> were classified as Out of scope and excluded from charts. This may indicate non-logistics titles, very short titles, or unrecognised formats. Adding a <strong>description</strong> column may improve accuracy.
+      {noiseCount > 0 && (
+        <div style={{ marginBottom: 16, padding: "10px 16px", background: "#f1f5f9", borderRadius: 8, border: `1px solid #cbd5e1`, fontSize: 12, color: "#475569" }}>
+          ℹ <strong>{noiseCount} out-of-scope row{noiseCount !== 1 ? "s" : ""} excluded from logistics analysis.</strong>
+          {noiseRatio > 0.3 && <span> ({Math.round(noiseRatio * 100)}% of dataset — consider reviewing your data or adding a description column.)</span>}
         </div>
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
