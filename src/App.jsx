@@ -528,12 +528,16 @@ function cleanTitle(raw) {
   for (const p of REMOVE_CONTRACT) t = t.replace(new RegExp(`\\b${p}\\b`, "gi"), "");
   t = t.replace(/[-–|,]\s*(NZ|AU|NZL|AUS|NZ\/AU|AU\/NZ|Auckland|Wellington|Christchurch|Hamilton|Dunedin|Sydney|Melbourne|Brisbane|Perth|Adelaide|Canberra|Singapore|SGP|London|Manchester|Birmingham|UK|United Kingdom|New York|Los Angeles|Chicago|Houston|US|USA|United States|APAC|ANZ|Remote|Hybrid|On-?site).*/i, "");
   t = t.replace(/\(.*?\)/g, "").replace(/\[.*?\]/g, "");
-  t = t.replace(/\bSr\.(\s)/gi, "Senior$1").replace(/\bSr\.$/gi, "Senior")
-       .replace(/\bJr\.(\s)/gi, "Junior$1").replace(/\bJr\.$/gi, "Junior")
-       .replace(/\bMgr\.?(\s|$)/gi, "Manager$1").replace(/\bCoord\.?(\s|$)/gi, "Coordinator$1")
-       .replace(/\bAsst\.?(\s|$)/gi, "Assistant$1").replace(/\bSupvr?\.?(\s|$)/gi, "Supervisor$1")
-       .replace(/\bDir\.?(\s|$)/gi, "Director$1").replace(/\bExec\.?(\s|$)/gi, "Executive$1")
-       .replace(/\bBD\b/g, "Business Development").replace(/\bOps\b/gi, "Operations")
+  t = t.replace(/\bSnr\.?\b/gi, "Senior").replace(/\bSr\.?\b/gi, "Senior")
+       .replace(/\bJnr\.?\b/gi, "Junior").replace(/\bJr\.?\b/gi, "Junior")
+       .replace(/\bMgr\.?\b/gi, "Manager").replace(/\bCoord\.?\b/gi, "Coordinator")
+       .replace(/\bAsst\.?\b/gi, "Assistant").replace(/\bSupvr?\.?\b/gi, "Supervisor")
+       .replace(/\bDir\.?\b/gi, "Director").replace(/\bExec\.?\b/gi, "Executive")
+       .replace(/\bAdmin\.?\b/gi, "Administrator")
+       .replace(/\bWhse\.?\b/gi, "Warehouse").replace(/\bWhs\.?\b/gi, "Warehouse")
+       .replace(/\bOps\.?\b/gi, "Operations").replace(/\bOp\.?\b/gi, "Operator")
+       .replace(/\bSpec\.?\b/gi, "Specialist").replace(/\bAnal\.?\b/gi, "Analyst")
+       .replace(/\bBD\b/g, "Business Development")
        .replace(/\bFP&A\b/gi, "Financial Planning & Analysis")
        .replace(/\bAP\/AR\b/gi, "Accounts Payable/Receivable")
        .replace(/\bA\/P\b/gi, "Accounts Payable").replace(/\bA\/R\b/gi, "Accounts Receivable")
@@ -2448,14 +2452,14 @@ function SkillMapper() {
 let _tcSampleCache = null;
 
 const TC_SAMPLES = [
-  "Sr. Freight Coordinator – FCL/LCL (Auckland, NZ)",
+  "Snr Whse Ops Coord",
+  "Jr Logistics Admin",
+  "Hiring Now: Freight Coordinator",
+  "Warehouse Assistant - Auckland",
+  "DC Supervisor",
+  "Import/Export Admin",
+  "SUPPLY CHAIN MANAGER",
   "Ops Mgr - 3PL Warehouse [Fixed Term]",
-  "BD Executive, Last Mile & Parcel (AU)",
-  "Customs Clearance Officer / Import-Export",
-  "APAC Supply Chain Planner - Immediate Start",
-  "Retail Health Consultant (Full Time)",
-  "Warehouse Assistant – Night Shift – Casual",
-  "Customer Service / Dispatch Coordinator",
 ];
 
 function TitleCleaner() {
@@ -2507,29 +2511,34 @@ function TitleCleaner() {
           </div>
         )}
         {manualResult && (
-          <div style={{ marginTop: 16, padding: "16px 18px", borderRadius: 9, background: C.accentLight, border: `1px solid ${C.accentBorder}`, display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}>
-            <div>
-              <FieldLabel>Clean Title</FieldLabel>
-              <div style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{manualResult.cleanTitle}</div>
-              {manualResult.cleanTitle !== manualInput.trim() && (
-                <div style={{ fontSize: 11, color: C.textMuted, marginTop: 3 }}>
-                  Was: <span style={{ fontFamily: "monospace", background: C.pill, padding: "1px 5px", borderRadius: 3 }}>{manualInput}</span>
+          <div style={{ marginTop: 16, borderRadius: 9, border: `1px solid ${C.accentBorder}`, overflow: "hidden" }}>
+            {/* Before → After */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 0, background: C.accentLight, padding: "14px 18px" }}>
+              <div>
+                <FieldLabel>Original</FieldLabel>
+                <div style={{ fontFamily: "monospace", fontSize: 13, color: C.textSub, background: C.pill, padding: "4px 10px", borderRadius: 6, display: "inline-block" }}>{manualInput}</div>
+              </div>
+              <div style={{ fontSize: 20, color: C.accent, padding: "0 12px" }}>→</div>
+              <div>
+                <FieldLabel>Cleaned</FieldLabel>
+                <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
+                  {manualResult.cleanTitle}
+                  {manualResult.cleanTitle.toLowerCase().replace(/\s/g,"") === manualInput.toLowerCase().replace(/\s/g,"") && (
+                    <span style={{ fontSize: 11, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>no changes</span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-            <div>
-              <FieldLabel>Functional Area</FieldLabel>
-              <Badge tone={domainTone(manualResult.domain)}>{manualResult.domain}</Badge>
-            </div>
-            <div>
-              <FieldLabel>Seniority</FieldLabel>
-              <Badge tone={seniorityTone(manualResult.seniority)} variant="tag">{manualResult.seniority}</Badge>
-            </div>
-            <div>
-              <FieldLabel>Match Confidence</FieldLabel>
-              <span style={{ fontSize: 13, fontWeight: 700, color: matchConfidenceLabel(manualResult.confidence).text }}>
-                {manualResult.confidence}% · {matchConfidenceLabel(manualResult.confidence).label}
-              </span>
+            {/* Classification info */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 20, padding: "12px 18px", borderTop: `1px solid ${C.accentBorder}`, background: C.card }}>
+              <div><FieldLabel>Functional Area</FieldLabel><Badge tone={domainTone(manualResult.domain)}>{manualResult.domain}</Badge></div>
+              <div><FieldLabel>Seniority</FieldLabel><Badge tone={seniorityTone(manualResult.seniority)} variant="tag">{manualResult.seniority}</Badge></div>
+              <div>
+                <FieldLabel>Match Confidence</FieldLabel>
+                <span style={{ fontSize: 13, fontWeight: 700, color: matchConfidenceLabel(manualResult.confidence).text }}>
+                  {manualResult.confidence}% · {matchConfidenceLabel(manualResult.confidence).label}
+                </span>
+              </div>
             </div>
           </div>
         )}

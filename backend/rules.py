@@ -143,6 +143,7 @@ REMOVE_PHRASES = [
     "career growth", "wanted", "needed", "join our team", "above award rate",
     "great money", "packag", "remuner", "salary package",
     "competitive package", "competitive salary", "bonus",
+    "hiring now", "urgent", "now hiring", "we're hiring", "we are hiring",
 ]
 REMOVE_SHIFT = [
     "night shift", "day shift", "afternoon shift", "am shift", "pm shift",
@@ -283,6 +284,30 @@ def _title_case(s: str) -> str:
     return " ".join(out)
 
 
+_ABBREV_EXPAND = [
+    (re.compile(r'\bSnr\.?\b', re.I), "Senior"),
+    (re.compile(r'\bSr\.?\b',  re.I), "Senior"),
+    (re.compile(r'\bJnr\.?\b', re.I), "Junior"),
+    (re.compile(r'\bJr\.?\b',  re.I), "Junior"),
+    (re.compile(r'\bMgr\.?\b', re.I), "Manager"),
+    (re.compile(r'\bCoord\.?\b', re.I), "Coordinator"),
+    (re.compile(r'\bAsst\.?\b', re.I), "Assistant"),
+    (re.compile(r'\bSupvr?\.?\b', re.I), "Supervisor"),
+    (re.compile(r'\bDir\.?\b',  re.I), "Director"),
+    (re.compile(r'\bExec\.?\b', re.I), "Executive"),
+    (re.compile(r'\bAdmin\.?\b', re.I), "Administrator"),
+    (re.compile(r'\bWhse\.?\b', re.I), "Warehouse"),
+    (re.compile(r'\bWhs\.?\b',  re.I), "Warehouse"),
+    (re.compile(r'\bOps\.?\b',  re.I), "Operations"),
+    (re.compile(r'\bOp\.?\b',   re.I), "Operator"),
+    (re.compile(r'\bSpec\.?\b', re.I), "Specialist"),
+    (re.compile(r'\bDC\b', re.I),       "Distribution Centre"),
+    (re.compile(r'\bBD\b', re.I),       "Business Development"),
+    (re.compile(r'\bGM\b', re.I),       "General Manager"),
+    (re.compile(r'\bVP\b', re.I),       "Vice President"),
+    (re.compile(r'\bTL\b', re.I),       "Team Lead"),
+]
+
 def clean_title(raw: str) -> str:
     t = str(raw).strip()
     t = _EMOJI_RE.sub("", t)
@@ -297,8 +322,12 @@ def clean_title(raw: str) -> str:
         tl = tl.replace(typo, fix)
     t = _MULTI_SEP_RE.sub(" – ", tl)
     t = _EMPTY_BRACKETS_RE.sub("", t)
+    t = re.sub(r'^[\s:,|]+', '', t)  # strip leading colons/separators left by phrase removal
     t = _TRAILING_RE.sub("", t).strip()
     t = re.sub(r'\s+', ' ', t).strip()
+    # Expand abbreviations after noise removal
+    for pattern, replacement in _ABBREV_EXPAND:
+        t = pattern.sub(replacement, t)
     return _title_case(t) if t else raw.strip()
 
 
