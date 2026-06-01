@@ -430,88 +430,6 @@ function AIProWall({ onLogin, isLoggedIn }) {
   );
 }
 
-function FeedbackModal({ page = "", title = "", result = "", onClose }) {
-  const [step, setStep] = useState("rate");   // "rate" | "comment" | "done"
-  const [rating, setRating] = useState(null);
-  const [comment, setComment] = useState("");
-
-  async function handleRate(r) {
-    setRating(r);
-    setStep("comment");
-  }
-
-  function handleSubmit() {
-    submitFeedback(rating, comment.trim(), page, title, result); // fire and forget
-    setStep("done");
-    setTimeout(onClose, 1800);
-  }
-
-  function handleSkip() {
-    submitFeedback(rating, "", page, title, result); // fire and forget
-    setStep("done");
-    setTimeout(onClose, 1800);
-  }
-
-  return (
-    <div
-      onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ background: C.sidebar, border: `1px solid ${C.border}`, borderRadius: 14, padding: "28px 30px", width: 340, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", fontFamily: "inherit" }}>
-
-        {step === "rate" && <>
-          <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 6 }}>Quick feedback</div>
-          <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 20 }}>How is the tool working for you?</div>
-          <div style={{ display: "flex", gap: 12 }}>
-            {[["up", "👍", "Works great"], ["down", "👎", "Something's off"]].map(([r, emoji, label]) => (
-              <button key={r} onClick={() => handleRate(r)}
-                style={{ flex: 1, padding: "14px 0", borderRadius: 10, border: `1px solid ${C.border}`, background: C.bg, cursor: "pointer", fontFamily: "inherit", fontSize: 22, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: C.textMuted, transition: "border-color 0.15s" }}>
-                {emoji}
-                <span style={{ fontSize: 11 }}>{label}</span>
-              </button>
-            ))}
-          </div>
-          <button onClick={onClose} style={{ marginTop: 16, background: "none", border: "none", fontSize: 12, color: C.textMuted, cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "center" }}>Cancel</button>
-        </>}
-
-        {step === "comment" && <>
-          <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 6 }}>
-            {rating === "up" ? "👍 Glad it's working!" : "👎 Thanks for letting us know"}
-          </div>
-          <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 14 }}>Anything specific to add? (optional)</div>
-          <textarea
-            autoFocus
-            value={comment}
-            onChange={e => setComment(e.target.value)}
-            maxLength={300}
-            placeholder="e.g. The Transport category is missing X..."
-            style={{ width: "100%", boxSizing: "border-box", height: 90, borderRadius: 8, border: `1px solid ${C.border}`, background: C.bg, color: C.text, fontSize: 13, padding: "10px 12px", fontFamily: "inherit", resize: "none", outline: "none" }}
-          />
-          <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-            <button onClick={handleSkip}
-              style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: `1px solid ${C.border}`, background: "none", color: C.textMuted, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              Skip
-            </button>
-            <button onClick={handleSubmit}
-              style={{ flex: 2, padding: "10px 0", borderRadius: 8, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              Send Feedback
-            </button>
-          </div>
-        </>}
-
-        {step === "done" && (
-          <div style={{ textAlign: "center", padding: "10px 0" }}>
-            <div style={{ fontSize: 32, marginBottom: 10 }}>✅</div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>Thanks for the feedback!</div>
-            <div style={{ fontSize: 13, color: C.textMuted, marginTop: 6 }}>It helps us improve the tool.</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 const SKILL_SYNONYMS = skillConfig.skill_synonyms;
 
 const SKILL_DESCRIPTIONS = {
@@ -2831,7 +2749,6 @@ function ExportPage({ bulkResults }) {
 
 function About() {
   const isMobile = useIsMobile();
-  const [showAboutFeedback, setShowAboutFeedback] = useState(false);
   return (
     <div>
       <SectionTitle children="About" sub="What this tool does, what it doesn't, and how it works." />
@@ -2953,18 +2870,9 @@ function About() {
         </Card>
 
         {/* Feedback */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", background: C.bg, borderRadius: 12, border: `1px solid ${C.border}` }}>
-          <div>
-            <div style={{ fontWeight: 600, color: C.text, fontSize: 14, marginBottom: 3 }}>Have feedback or found an issue?</div>
-            <div style={{ fontSize: 13, color: C.textMuted }}>Let us know — it helps improve the tool.</div>
-          </div>
-          <button
-            onClick={() => setShowAboutFeedback(true)}
-            style={{ padding: "10px 22px", borderRadius: 8, background: C.accent, color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0, marginLeft: 20 }}>
-            💬 Give Feedback
-          </button>
-        </div>
-        {showAboutFeedback && <FeedbackModal page="about" onClose={() => setShowAboutFeedback(false)} />}
+        <Card style={{ padding: 18 }}>
+          <FeedbackForm page="about" testInput="Feedback from About page" metadata={{}} />
+        </Card>
 
       </div>
     </div>
@@ -3649,7 +3557,6 @@ export default function App() {
   const [showLanding, setShowLanding]     = useState(true);
   const [page, setPage]                   = useState("analyzer");
   const [bulkResults, setBulkResults]     = useState([]);
-  const [showFeedback, setShowFeedback]   = useState(false);
   const [aiContext, setAiContext]          = useState("");
   const [analyzerState, setAnalyzerState] = useState({ title: "", desc: "", country: "", result: null });
   const [user, setUser]                   = useState(null);
@@ -3760,10 +3667,6 @@ export default function App() {
               Sign In
             </button>
           )}
-          <button onClick={() => setShowFeedback(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, padding: 4 }}>
-            💬
-          </button>
         </div>
       </div>
 
@@ -3796,7 +3699,6 @@ export default function App() {
           </button>
         ))}
       </div>
-      {showFeedback && <FeedbackModal page={page} onClose={() => setShowFeedback(false)} />}
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />}
       {showResetPassword && <ResetPasswordModal onClose={() => { setShowResetPassword(false); }} />}
     </div>
@@ -3887,10 +3789,6 @@ export default function App() {
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#9ca3af", fontFamily: "inherit", padding: 0, lineHeight: 1.8, display: "block" }}>
                 ← Back to Landing Page
               </button>
-              <button onClick={() => setShowFeedback(true)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#4a527a", fontFamily: "inherit", padding: 0, lineHeight: 1.8, display: "block", marginTop: 4 }}>
-                💬 Give Feedback
-              </button>
               <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
                 <button onClick={() => setPage("privacy")}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: "#9ca3af", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
@@ -3972,7 +3870,6 @@ export default function App() {
         </div>
       </div>
 
-      {showFeedback && <FeedbackModal page={page} onClose={() => setShowFeedback(false)} />}
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />}
       {showResetPassword && <ResetPasswordModal onClose={() => { setShowResetPassword(false); }} />}
     </div>
