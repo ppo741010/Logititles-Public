@@ -99,6 +99,99 @@ const TYPO_MAP = {
 };
 const HOURS_POSITIONS_PATTERN = /\b(\d+\.?\d*\s*h(rs?|ours?)(\s*p\.?w\.?|\s*per\s*week)?|\d+\s*x\s*\w+|x\s*\d+\s*(position|role|vacancy|vacancies)?s?|\d+\s*(position|role|vacancy|vacancies)s?|multiple\s*(position|role)s?)\b/gi;
 
+// ── Reusable Feedback Component ────────────────────────────────────────────────
+
+function FeedbackForm({ page = "", testInput = "", metadata = {} }) {
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [rating, setRating] = useState("");
+  const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null); // null | "success" | "error"
+
+  async function submit() {
+    if (!rating || !comment.trim()) return;
+    setLoading(true);
+    setStatus(null);
+    try {
+      const { error } = await supabase.from("feedback").insert([
+        {
+          page,
+          test_input: testInput.slice(0, 100),
+          rating,
+          comment: comment.trim(),
+          metadata: JSON.stringify(metadata),
+          submitted_at: new Date().toISOString(),
+        },
+      ]);
+      if (!error) {
+        setStatus("success");
+        console.log("✅ Feedback saved");
+        setTimeout(() => {
+          setShowFeedback(false);
+          setRating("");
+          setComment("");
+          setStatus(null);
+        }, 1500);
+      } else {
+        setStatus("error");
+        console.error("Supabase error:", error);
+      }
+    } catch (err) {
+      setStatus("error");
+      console.error("Feedback error:", err);
+    }
+    setLoading(false);
+  }
+
+  if (!showFeedback) {
+    return (
+      <button onClick={() => setShowFeedback(true)}
+        style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px dashed #d1d5db", background: "transparent", color: C.textMuted, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>
+        📝 Help us improve — share your feedback
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ padding: "12px 14px", borderRadius: 8, background: "#f0fdf4", border: `1px solid #bbf7d0` }}>
+      {status === "success" && (
+        <div style={{ padding: "8px 12px", borderRadius: 6, background: "#ecfdf5", border: "1px solid #a7f3d0", marginBottom: 10, fontSize: 12, color: "#047857", fontWeight: 600 }}>
+          ✅ Thanks! Feedback saved.
+        </div>
+      )}
+      {status === "error" && (
+        <div style={{ padding: "8px 12px", borderRadius: 6, background: "#fef2f2", border: "1px solid #fca5a5", marginBottom: 10, fontSize: 12, color: "#b91c1c", fontWeight: 600 }}>
+          ❌ Error saving feedback. Please try again.
+        </div>
+      )}
+      <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 10 }}>Quick feedback</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        <button onClick={() => setRating("up")}
+          style={{ flex: 1, padding: "6px", borderRadius: 6, border: `2px solid ${rating === "up" ? "#16a34a" : "#e5e7eb"}`, background: rating === "up" ? "#f0fdf4" : "transparent", color: "#16a34a", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+          👍 Made sense
+        </button>
+        <button onClick={() => setRating("down")}
+          style={{ flex: 1, padding: "6px", borderRadius: 6, border: `2px solid ${rating === "down" ? "#dc2626" : "#e5e7eb"}`, background: rating === "down" ? "#fef2f2" : "transparent", color: "#dc2626", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+          👎 Confusing
+        </button>
+      </div>
+      <textarea value={comment} onChange={e => setComment(e.target.value)}
+        placeholder="What was confusing or missing?"
+        style={{ width: "100%", padding: "8px", borderRadius: 6, border: `1px solid #d1d5db`, fontSize: 12, fontFamily: "inherit", resize: "vertical", height: 60, boxSizing: "border-box" }} />
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <button onClick={submit} disabled={!rating || !comment.trim() || loading}
+          style={{ flex: 1, padding: "6px", borderRadius: 6, border: "none", background: rating && comment.trim() ? "#16a34a" : "#d1d5db", color: "#fff", cursor: rating && comment.trim() ? "pointer" : "default", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
+          {loading ? "…" : "Submit"}
+        </button>
+        <button onClick={() => { setShowFeedback(false); setRating(""); setComment(""); setStatus(null); }}
+          style={{ flex: 1, padding: "6px", borderRadius: 6, border: `1px solid #d1d5db`, background: "transparent", color: C.textMuted, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Feedback modal ────────────────────────────────────────────────────────────
 
 function AuthModal({ onClose, onSuccess }) {
@@ -1322,45 +1415,11 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin,
                   </button>
                 </div>
               )}
-              <InlineFeedback title={title} result={result} />
+              <FeedbackForm page="single_analyzer" testInput={title} metadata={{ domain: result.domain, confidence: result.confidence, status: getStatusLabel(result) }} />
             </div>
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function InlineFeedback({ title, result }) {
-  const [sent, setSent] = useState(null); // null | "up" | "down"
-
-  function handleRate(r) {
-    setSent(r);
-    const domain = typeof result === "object" ? result.domain : result;
-    submitFeedback(r, "", "single", title, domain, {
-      confidence:   typeof result === "object" ? result.confidence : null,
-      status:       typeof result === "object" ? getStatusLabel(result) : null,
-      out_of_scope: typeof result === "object" ? isOutOfScope(result) : null,
-    });
-  }
-
-  if (sent) {
-    return (
-      <div style={{ fontSize: 12, color: "#6b7280", textAlign: "center", padding: "10px 0" }}>
-        {sent === "up" ? "👍 Thanks!" : "👎 Got it, we'll review this."}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", padding: "6px 0" }}>
-      <span style={{ fontSize: 12, color: "#6b7280" }}>Was this classification correct?</span>
-      {[["up", "👍"], ["down", "👎"]].map(([r, emoji]) => (
-        <button key={r} onClick={() => handleRate(r)}
-          style={{ background: "none", border: `1px solid #374151`, borderRadius: 8, padding: "4px 12px", cursor: "pointer", fontSize: 14, color: "#9ca3af", fontFamily: "inherit" }}>
-          {emoji}
-        </button>
-      ))}
     </div>
   );
 }
@@ -2331,23 +2390,26 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
 
         {/* Export bar */}
         {phase === "done" && (
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, marginRight: 4 }}>EXPORT AS</div>
-            <button onClick={() => doDownloadCSV(results)}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.card, fontSize: 13, cursor: "pointer", fontWeight: 600, color: C.text, fontFamily: "inherit" }}>
-              📄 CSV
-            </button>
-            <button onClick={() => doDownloadJSON(results)}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.card, fontSize: 13, cursor: "pointer", fontWeight: 600, color: C.text, fontFamily: "inherit" }}>
-              {"{ }"} JSON
-            </button>
-            <button onClick={() => doDownloadXLSX(results)}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.card, fontSize: 13, cursor: "pointer", fontWeight: 600, color: C.text, fontFamily: "inherit" }}>
-              📊 Excel
-            </button>
-            <div style={{ marginLeft: "auto", fontSize: 12, color: C.textMuted }}>
-              {total} rows · {structured} structured · {total - structured} flagged
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, marginRight: 4 }}>EXPORT AS</div>
+              <button onClick={() => doDownloadCSV(results)}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.card, fontSize: 13, cursor: "pointer", fontWeight: 600, color: C.text, fontFamily: "inherit" }}>
+                📄 CSV
+              </button>
+              <button onClick={() => doDownloadJSON(results)}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.card, fontSize: 13, cursor: "pointer", fontWeight: 600, color: C.text, fontFamily: "inherit" }}>
+                {"{ }"} JSON
+              </button>
+              <button onClick={() => doDownloadXLSX(results)}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.card, fontSize: 13, cursor: "pointer", fontWeight: 600, color: C.text, fontFamily: "inherit" }}>
+                📊 Excel
+              </button>
+              <div style={{ marginLeft: "auto", fontSize: 12, color: C.textMuted }}>
+                {total} rows · {structured} structured · {total - structured} flagged
+              </div>
             </div>
+            <FeedbackForm page="bulk_upload" testInput={fileName} metadata={{ total_rows: total, structured, flagged: total - structured }} />
           </div>
         )}
       </div>
@@ -2362,11 +2424,6 @@ function SkillMapper() {
   const [input, setInput]     = useState("");
   const [results, setResults] = useState([]);
   const [hasJobTitleWarning, setHasJobTitleWarning] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackData, setFeedbackData] = useState({ rating: "", comment: "" });
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
-  const [feedbackStatus, setFeedbackStatus] = useState(null); // null | "success" | "error"
-
   const TOO_BROAD = new Set([
     "software","system","systems","tool","tools","platform","platforms",
     "technology","technologies","skills","experience","knowledge","ability",
@@ -2401,40 +2458,6 @@ function SkillMapper() {
       const looksLikeTitle = looksLikeJobTitle(phrase);
       return { raw: phrase, normalized: match ? match[1] : null, tooBroad, looksLikeTitle };
     }));
-  }
-
-  async function submitFeedback() {
-    if (!feedbackData.rating || !feedbackData.comment.trim()) return;
-    setFeedbackLoading(true);
-    setFeedbackStatus(null);
-    try {
-      // Directly save to Supabase (no API needed for dev)
-      const { error } = await supabase.from("feedback").insert([
-        {
-          title: input.slice(0, 100),
-          result: results.filter(r => r.normalized).length > 0 ? "matched" : "unmatched",
-          rating: feedbackData.rating,
-          comment: feedbackData.comment,
-          page: "skill_mapper",
-        },
-      ]);
-      if (!error) {
-        setFeedbackStatus("success");
-        console.log("✅ Feedback saved to Supabase");
-        setTimeout(() => {
-          setShowFeedback(false);
-          setFeedbackData({ rating: "", comment: "" });
-          setFeedbackStatus(null);
-        }, 1500);
-      } else {
-        setFeedbackStatus("error");
-        console.error("Supabase error:", error);
-      }
-    } catch (error) {
-      setFeedbackStatus("error");
-      console.error("Feedback error:", error);
-    }
-    setFeedbackLoading(false);
   }
 
   function exportResults() {
@@ -2521,49 +2544,7 @@ function SkillMapper() {
                   <strong>Common variants</strong> like "wms software", "warehouse management system", "wms" all map to the same canonical label.
                 </div>
 
-                {!showFeedback ? (
-                  <button onClick={() => setShowFeedback(true)}
-                    style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px dashed #d1d5db", background: "transparent", color: C.textMuted, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>
-                    📝 Help us improve — share your feedback
-                  </button>
-                ) : (
-                  <div style={{ padding: "12px 14px", borderRadius: 8, background: "#f0fdf4", border: `1px solid #bbf7d0` }}>
-                    {feedbackStatus === "success" && (
-                      <div style={{ padding: "8px 12px", borderRadius: 6, background: "#ecfdf5", border: "1px solid #a7f3d0", marginBottom: 10, fontSize: 12, color: "#047857", fontWeight: 600 }}>
-                        ✅ Thanks! Feedback saved.
-                      </div>
-                    )}
-                    {feedbackStatus === "error" && (
-                      <div style={{ padding: "8px 12px", borderRadius: 6, background: "#fef2f2", border: "1px solid #fca5a5", marginBottom: 10, fontSize: 12, color: "#b91c1c", fontWeight: 600 }}>
-                        ❌ Error saving feedback. Please try again.
-                      </div>
-                    )}
-                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 10 }}>Quick feedback</div>
-                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                      <button onClick={() => setFeedbackData({...feedbackData, rating: "up"})}
-                        style={{ flex: 1, padding: "6px", borderRadius: 6, border: `2px solid ${feedbackData.rating === "up" ? "#16a34a" : "#e5e7eb"}`, background: feedbackData.rating === "up" ? "#f0fdf4" : "transparent", color: "#16a34a", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-                        👍 Made sense
-                      </button>
-                      <button onClick={() => setFeedbackData({...feedbackData, rating: "down"})}
-                        style={{ flex: 1, padding: "6px", borderRadius: 6, border: `2px solid ${feedbackData.rating === "down" ? "#dc2626" : "#e5e7eb"}`, background: feedbackData.rating === "down" ? "#fef2f2" : "transparent", color: "#dc2626", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-                        👎 Confusing
-                      </button>
-                    </div>
-                    <textarea value={feedbackData.comment} onChange={e => setFeedbackData({...feedbackData, comment: e.target.value})}
-                      placeholder="What was confusing or missing?"
-                      style={{ width: "100%", padding: "8px", borderRadius: 6, border: `1px solid #d1d5db`, fontSize: 12, fontFamily: "inherit", resize: "vertical", height: 60, boxSizing: "border-box" }} />
-                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <button onClick={submitFeedback} disabled={!feedbackData.rating || !feedbackData.comment.trim() || feedbackLoading}
-                        style={{ flex: 1, padding: "6px", borderRadius: 6, border: "none", background: feedbackData.rating && feedbackData.comment.trim() ? "#16a34a" : "#d1d5db", color: "#fff", cursor: feedbackData.rating && feedbackData.comment.trim() ? "pointer" : "default", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
-                        {feedbackLoading ? "…" : "Submit"}
-                      </button>
-                      <button onClick={() => { setShowFeedback(false); setFeedbackData({ rating: "", comment: "" }); setFeedbackStatus(null); }}
-                        style={{ flex: 1, padding: "6px", borderRadius: 6, border: `1px solid #d1d5db`, background: "transparent", color: C.textMuted, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <FeedbackForm page="skill_mapper" testInput={input} metadata={{ matched, unmatched }} />
               </div>
             )}
         </Card>
@@ -2690,6 +2671,11 @@ function TitleCleaner() {
           </div>
           );
         })()}
+        {manualResult && (
+          <div style={{ borderTop: `1px solid ${C.border}`, padding: "12px 18px", background: C.card }}>
+            <FeedbackForm page="title_cleaner" testInput={manualInput} metadata={{ domain: manualResult.domain, confidence: manualResult.confidence, status: getStatusLabel(manualResult) }} />
+          </div>
+        )}
       </Card>
 
       {/* Sample table */}
