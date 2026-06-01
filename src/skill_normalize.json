@@ -218,7 +218,16 @@
     "transportation management system": "TMS",
     "tms system": "TMS",
     "enterprise resource planning": "ERP Systems",
-    "erp system": "ERP Systems"
+    "erp system": "ERP Systems",
+    "sap erp": "SAP",
+    "sap system": "SAP",
+    "sap systems": "SAP",
+    "oracle erp": "ERP Systems",
+    "oracle": "ERP Systems",
+    "oracle system": "ERP Systems",
+    "netsuite": "ERP Systems",
+    "myob": "ERP Systems",
+    "xero": "ERP Systems"
   },
   "abbreviations": [
     "WMS",
