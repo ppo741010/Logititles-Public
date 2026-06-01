@@ -2825,7 +2825,7 @@ const QUICK_PROMPTS = [
   "What does the confidence score mean?",
 ];
 
-function AIAssistant({ initialContext = "", onClearContext }) {
+function AIAssistant({ initialContext = "", onClearContext, bulkResults = [] }) {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi! I'm your logistics HR specialist. Ask me anything about your classification results, salary benchmarks, or logistics job titles in general." }
   ]);
@@ -2847,6 +2847,25 @@ function AIAssistant({ initialContext = "", onClearContext }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function buildBulkContext() {
+    if (!bulkResults.length) return "";
+    const inScope = bulkResults.filter(r => !isOutOfScope(r));
+    const outOfScope = bulkResults.length - inScope.length;
+    const lowConf = inScope.filter(r => r.confidence < 55).length;
+    const domainCounts = {};
+    const seniorityCounts = {};
+    const skillCounts = {};
+    inScope.forEach(r => {
+      if (r.domain) domainCounts[r.domain] = (domainCounts[r.domain] || 0) + 1;
+      if (r.seniority) seniorityCounts[r.seniority] = (seniorityCounts[r.seniority] || 0) + 1;
+      (r.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; });
+    });
+    const topDomains = Object.entries(domainCounts).sort((a,b) => b[1]-a[1]).map(([d,c]) => `${d}: ${c}`).join(", ");
+    const topSeniority = Object.entries(seniorityCounts).sort((a,b) => b[1]-a[1]).map(([s,c]) => `${s}: ${c}`).join(", ");
+    const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,8).map(([s,c]) => `${s}(${c})`).join(", ");
+    return `Dataset summary: ${bulkResults.length} records total. Out-of-scope (excluded): ${outOfScope}. Low-confidence rows (review recommended): ${lowConf}. Domain breakdown (in-scope only): ${topDomains}. Seniority breakdown: ${topSeniority}. Top skills: ${topSkills}. When answering, always exclude out-of-scope rows and say so. Do not estimate salary for out-of-scope or low-confidence rows.`;
+  }
+
   async function send(text, ctx = "") {
     const msg = (text || input).trim();
     if (!msg || loading) return;
@@ -2857,17 +2876,25 @@ function AIAssistant({ initialContext = "", onClearContext }) {
     const history = updated.slice(1).slice(0, -1).map(m => ({ role: m.role, content: m.content }));
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token ?? "";
-    const reply = await chatViaAPI(msg, history, ctx, token);
-    setMessages(prev => [...prev, {
-      role: "assistant",
-      content: reply || "Sorry, I couldn't get a response. Please try again."
-    }]);
+    const context = ctx || buildBulkContext();
+    const reply = await chatViaAPI(msg, history, context, token);
+    const errorMsg = reply === null
+      ? "The AI Assistant is temporarily unavailable. Please try again in a moment."
+      : reply === "auth"
+      ? "Your session has expired. Please sign in again to use the AI Assistant."
+      : null;
+    setMessages(prev => [...prev, { role: "assistant", content: errorMsg || reply }]);
     setLoading(false);
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 64px)", maxWidth: 720 }}>
       <SectionTitle children="AI Assistant" sub="Ask questions about your results, salary benchmarks, or logistics job titles." />
+      {bulkResults.length > 0 && (
+        <div style={{ marginBottom: 12, padding: "8px 14px", borderRadius: 8, background: C.greenLight, border: `1px solid ${C.greenBorder}`, fontSize: 12, color: "#166534" }}>
+          ✓ Dataset loaded — {bulkResults.length} rows ({bulkResults.filter(r => !isOutOfScope(r)).length} in-scope). Ask questions about your results below.
+        </div>
+      )}
 
       {/* Quick prompts */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
@@ -3589,7 +3616,7 @@ export default function App() {
         {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} />}
         {page === "bulk"     && <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />}
         {page === "export"   && <ExportPage bulkResults={bulkResults} />}
-        {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
+        {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} bulkResults={bulkResults} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
         {page === "privacy"  && <PrivacyPolicy />}
         {page === "terms"    && <TermsOfService />}
         {!["analyzer","bulk","export","ai","privacy","terms"].includes(page) && navItem && <navItem.component />}
@@ -3766,7 +3793,7 @@ export default function App() {
           {page === "analyzer" && <SingleAnalyzer onAskAI={handleAskAI} user={user} planKey={planKey} onLogin={() => setShowAuth(true)} />}
           {page === "bulk"     && <BulkUpload onResultsReady={setBulkResults} user={user} limits={limits} userPlan={userPlan} onLogin={() => setShowAuth(true)} planKey={planKey} />}
           {page === "export"   && <ExportPage bulkResults={bulkResults} />}
-          {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
+          {page === "ai"       && (planKey === "pro" ? <AIAssistant initialContext={aiContext} onClearContext={() => setAiContext("")} bulkResults={bulkResults} /> : <AIProWall onLogin={() => setShowAuth(true)} isLoggedIn={!!user} />)}
           {page === "privacy"  && <PrivacyPolicy />}
           {page === "terms"    && <TermsOfService />}
           {!["analyzer","bulk","export","ai","privacy","terms"].includes(page) && navItem && <navItem.component />}
