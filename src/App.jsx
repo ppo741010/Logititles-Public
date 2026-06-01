@@ -743,7 +743,7 @@ function detectColumns(headers) {
 
 // ── Export utilities ─────────────────────────────────────────────────────────
 
-const EXPORT_FIELDS = ["raw_title","clean_title","domain","work_nature","seniority","confidence","status","skills","flags","needs_review","country","salary_range","salary_median"];
+const EXPORT_FIELDS = ["raw_title","clean_title","domain","work_nature","seniority","confidence","status","out_of_scope","needs_review","skills","flags","salary_note","country","salary_range","salary_min","salary_max","salary_median"];
 
 function isOutOfScope(r) {
   return r.out_of_scope || r.domain === "Other/Noise" || r.domain === "Out of scope";
@@ -757,20 +757,27 @@ function getStatusLabel(r) {
 }
 
 function buildExportRow(r) {
+  const sb = r.salaryBenchmark || r.salary_benchmark || null;
+  const low  = sb ? Math.round(sb.median * 0.88 / 1000) * 1000 : null;
+  const high = sb ? Math.round(sb.median * 1.12 / 1000) * 1000 : null;
   return {
-    raw_title:       r.raw || "",
-    clean_title:     r.cleanTitle || "",
-    domain:          r.domain || "",
-    work_nature:     r.nature || "",
-    seniority:       r.seniority || "",
-    confidence:      `${r.confidence}%`,
-    status:          getStatusLabel(r),
-    skills:          (r.skills || []).join("; "),
-    flags:           (r.flags || []).join(" | "),
-    needs_review:    r.needsReview ? "Yes" : "No",
-    country:         r.country || "",
-    salary_range:    r.salaryBenchmark?.range || "",
-    salary_median:   r.salaryBenchmark ? `${r.salaryBenchmark.currency} ${r.salaryBenchmark.median}` : "",
+    raw_title:    r.raw || r.raw_title || "",
+    clean_title:  r.cleanTitle || r.clean_title || "",
+    domain:       r.domain || "",
+    work_nature:  r.nature || r.work_nature || "",
+    seniority:    r.seniority || "",
+    confidence:   `${r.confidence}%`,
+    status:       getStatusLabel(r),
+    out_of_scope: isOutOfScope(r) ? "Yes" : "No",
+    needs_review: r.needsReview || r.needs_review ? "Yes" : "No",
+    skills:       (r.skills || []).join("; "),
+    flags:        (r.flags || []).join(" | "),
+    salary_note:  r.salaryNote || r.salary_note || "",
+    country:      r.country || "",
+    salary_range: sb?.range || "",
+    salary_min:   low ? `${sb.currency} ${low.toLocaleString()}` : "",
+    salary_max:   high ? `${sb.currency} ${high.toLocaleString()}` : "",
+    salary_median: sb ? `${sb.currency} ${sb.median.toLocaleString()}` : "",
   };
 }
 
@@ -794,21 +801,31 @@ function doDownloadCSV(results, filename = "logistics_structured.csv") {
 }
 
 function doDownloadJSON(results, filename = "logistics_structured.json") {
-  const rows = results.map(r => ({
-    raw_title: r.raw || "",
-    clean_title: r.cleanTitle || "",
-    domain:          r.domain || "",
-    work_nature: r.nature || "",
-    seniority: r.seniority || "",
-    confidence: r.confidence,
-    skills: r.skills || [],
-    flags: r.flags || [],
-    needs_review: r.needsReview || false,
-    country: r.country || "",
-    salary_range: r.salaryBenchmark?.range || null,
-    salary_median: r.salaryBenchmark?.median || null,
-    salary_currency: r.salaryBenchmark?.currency || null,
-  }));
+  const rows = results.map(r => {
+    const sb = r.salaryBenchmark || r.salary_benchmark || null;
+    const low  = sb ? Math.round(sb.median * 0.88 / 1000) * 1000 : null;
+    const high = sb ? Math.round(sb.median * 1.12 / 1000) * 1000 : null;
+    return {
+      raw_title:    r.raw || r.raw_title || "",
+      clean_title:  r.cleanTitle || r.clean_title || "",
+      domain:       r.domain || "",
+      work_nature:  r.nature || r.work_nature || "",
+      seniority:    r.seniority || "",
+      confidence:   r.confidence,
+      status:       getStatusLabel(r),
+      out_of_scope: isOutOfScope(r),
+      needs_review: !!(r.needsReview || r.needs_review),
+      skills:       r.skills || [],
+      flags:        r.flags || [],
+      salary_note:  r.salaryNote || r.salary_note || null,
+      country:      r.country || "",
+      salary_range: sb?.range || null,
+      salary_min:   low,
+      salary_max:   high,
+      salary_median:   sb?.median || null,
+      salary_currency: sb?.currency || null,
+    };
+  });
   triggerDownload(new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" }), filename);
 }
 
