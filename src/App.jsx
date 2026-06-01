@@ -2467,6 +2467,7 @@ function TitleCleaner() {
   const [manualResult, setManualResult] = useState(null);
   const [manualLoading, setManualLoading] = useState(false);
   const [sampleResults, setSampleResults] = useState(_tcSampleCache);
+  const [samplesOpen, setSamplesOpen]   = useState(true);
 
   useEffect(() => {
     if (_tcSampleCache) return; // already fetched this session
@@ -2483,6 +2484,7 @@ function TitleCleaner() {
   async function runManual() {
     if (!manualInput.trim()) return;
     setManualLoading(true);
+    setSamplesOpen(false); // auto-collapse sample table when user runs their own
     const apiResult = await analyzeViaAPI(manualInput.trim());
     setManualResult(apiResult ?? { ...analyze(manualInput.trim(), "", ""), source: "local" });
     setManualLoading(false);
@@ -2546,11 +2548,15 @@ function TitleCleaner() {
 
       {/* Sample table */}
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, background: C.bg }}>
-          <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>Before / After — Sample Titles</div>
-          <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>Shows what gets cleaned from real logistics job ad titles</div>
+        <div onClick={() => setSamplesOpen(o => !o)}
+          style={{ padding: "14px 20px", borderBottom: samplesOpen ? `1px solid ${C.border}` : "none", background: C.bg, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>Before / After — Sample Titles</div>
+            <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>Shows what gets cleaned from real logistics job ad titles</div>
+          </div>
+          <span style={{ fontSize: 13, color: C.textMuted }}>{samplesOpen ? "▲" : "▼"}</span>
         </div>
-        {!sampleResults ? (
+        {samplesOpen && (!sampleResults ? (
           <div style={{ padding: "32px 20px", textAlign: "center", color: C.textMuted, fontSize: 13 }}>Loading samples…</div>
         ) : (
         <div style={{ overflowX: "auto" }}>
@@ -2580,7 +2586,7 @@ function TitleCleaner() {
             </tbody>
           </table>
         </div>
-        )}
+        ))}
       </Card>
     </div>
   );
