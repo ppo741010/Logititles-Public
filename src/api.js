@@ -129,12 +129,17 @@ export async function chatViaAPI(message, history = [], context = "", token = ""
   }
 }
 
-export async function submitFeedback(rating, comment = "", page = "", title = "", result = "") {
+export async function submitFeedback(rating, comment = "", page = "", title = "", result = "", meta = {}) {
   try {
     await fetch(`${API_BASE}/feedback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rating, comment, page, title, result }),
+      body: JSON.stringify({
+        rating, comment, page, title, result,
+        confidence:   meta.confidence  ?? null,
+        status:       meta.status      ?? null,
+        out_of_scope: meta.out_of_scope ?? null,
+      }),
     });
   } catch {
     // silently ignore — feedback is non-critical

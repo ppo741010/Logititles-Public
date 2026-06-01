@@ -56,11 +56,14 @@ class CleanPreviewRequest(BaseModel):
     titles: list[str]
 
 class FeedbackRequest(BaseModel):
-    rating: str          # "up" or "down"
-    title: str = ""      # 被分類的職稱
-    result: str = ""     # 分到哪個 domain
+    rating: str                  # "up" or "down"
+    title: str = ""              # 被分類的職稱
+    result: str = ""             # 分到哪個 domain
     comment: str = ""
     page: str = ""
+    confidence: int | None = None
+    status: str | None = None    # Good match / Review recommended / Low confidence / Out of scope
+    out_of_scope: bool | None = None
 
 class WaitlistRequest(BaseModel):
     email: str
@@ -245,13 +248,17 @@ def submit_feedback(request: Request, req: FeedbackRequest):
 
     if supabase:
         try:
-            supabase.table("feedback").insert({
-                "title":   req.title,
-                "result":  req.result,
-                "rating":  req.rating,
-                "comment": req.comment,
-                "page":    req.page,
-            }).execute()
+            record = {
+                "title":        req.title,
+                "result":       req.result,
+                "rating":       req.rating,
+                "comment":      req.comment,
+                "page":         req.page,
+            }
+            if req.confidence  is not None: record["confidence"]  = req.confidence
+            if req.status      is not None: record["status"]      = req.status
+            if req.out_of_scope is not None: record["out_of_scope"] = req.out_of_scope
+            supabase.table("feedback").insert(record).execute()
         except Exception as e:
             logger.error("Supabase feedback insert failed: %s", e)
 

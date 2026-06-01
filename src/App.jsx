@@ -1309,7 +1309,7 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin }) {
                   </button>
                 </div>
               )}
-              <InlineFeedback title={title} result={result.domain} />
+              <InlineFeedback title={title} result={result} />
             </div>
           )}
         </div>
@@ -1323,7 +1323,12 @@ function InlineFeedback({ title, result }) {
 
   function handleRate(r) {
     setSent(r);
-    submitFeedback(r, "", "single", title, result);
+    const domain = typeof result === "object" ? result.domain : result;
+    submitFeedback(r, "", "single", title, domain, {
+      confidence:   typeof result === "object" ? result.confidence : null,
+      status:       typeof result === "object" ? getStatusLabel(result) : null,
+      out_of_scope: typeof result === "object" ? isOutOfScope(result) : null,
+    });
   }
 
   if (sent) {
