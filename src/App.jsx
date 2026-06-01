@@ -1623,15 +1623,17 @@ function BulkAIBubble({ results }) {
   function buildContext() {
     const domainCounts = {};
     const skillCounts = {};
-    results.forEach(r => {
+    const inScope = results.filter(r => !isOutOfScope(r));
+    const lowConf  = inScope.filter(r => r.confidence < 55).length;
+    inScope.forEach(r => {
       if (r.domain) domainCounts[r.domain] = (domainCounts[r.domain] || 0) + 1;
       (r.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; });
     });
     const topDomains = Object.entries(domainCounts).sort((a,b) => b[1]-a[1]).map(([d,c]) => `${d}: ${c}`).join(", ");
     const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,8).map(([s,c]) => `${s}(${c})`).join(", ");
     const total = results.length;
-    const noise = results.filter(r => isOutOfScope(r)).length;
-    return `Dataset summary: ${total} records total, ${noise} Other/Noise. Domain breakdown: ${topDomains}. Top skills: ${topSkills}.`;
+    const outOfScope = results.filter(r => isOutOfScope(r)).length;
+    return `Dataset summary: ${total} records total. Out-of-scope (excluded from analysis): ${outOfScope}. Low-confidence rows (review recommended): ${lowConf}. All domain/skill counts below exclude out-of-scope rows. Domain breakdown (in-scope only): ${topDomains}. Top skills (in-scope only): ${topSkills}. When answering questions about domains or skills, always specify you are excluding out-of-scope rows. Do not estimate salary for out-of-scope or low-confidence rows.`;
   }
 
   async function send() {

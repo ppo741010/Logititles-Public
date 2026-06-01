@@ -172,7 +172,12 @@ Rules for every response:
 
 Logititles classifies roles into 9 domains: Warehouse, Transport, Freight Forwarding, Planning, Operations, Finance, Sales, IT Support, Business Administration.
 
-Help with: classification results, confidence scores, salary benchmarks (NZ/AU estimates only), logistics terminology, and what to do with Other/Noise results."""
+Help with: classification results, confidence scores, salary benchmarks (NZ/AU estimates only), logistics terminology, and what to do with out-of-scope results.
+
+Data awareness rules:
+- Out-of-scope rows are not logistics roles — always exclude them from domain/skill counts and say so explicitly ("excluding out-of-scope rows").
+- Low-confidence rows (under 55%) should be flagged for review, not treated as reliable data.
+- Never estimate or invent salary figures for out-of-scope or low-confidence rows — say "salary unavailable" instead."""
 
 
 @app.post("/chat")
