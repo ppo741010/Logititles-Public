@@ -2365,6 +2365,7 @@ function SkillMapper() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackData, setFeedbackData] = useState({ rating: "", comment: "" });
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState(null); // null | "success" | "error"
 
   const TOO_BROAD = new Set([
     "software","system","systems","tool","tools","platform","platforms",
@@ -2405,6 +2406,7 @@ function SkillMapper() {
   async function submitFeedback() {
     if (!feedbackData.rating || !feedbackData.comment.trim()) return;
     setFeedbackLoading(true);
+    setFeedbackStatus(null);
     try {
       // Directly save to Supabase (no API needed for dev)
       const { error } = await supabase.from("feedback").insert([
@@ -2417,13 +2419,19 @@ function SkillMapper() {
         },
       ]);
       if (!error) {
-        setShowFeedback(false);
-        setFeedbackData({ rating: "", comment: "" });
+        setFeedbackStatus("success");
         console.log("✅ Feedback saved to Supabase");
+        setTimeout(() => {
+          setShowFeedback(false);
+          setFeedbackData({ rating: "", comment: "" });
+          setFeedbackStatus(null);
+        }, 1500);
       } else {
+        setFeedbackStatus("error");
         console.error("Supabase error:", error);
       }
     } catch (error) {
+      setFeedbackStatus("error");
       console.error("Feedback error:", error);
     }
     setFeedbackLoading(false);
@@ -2520,6 +2528,16 @@ function SkillMapper() {
                   </button>
                 ) : (
                   <div style={{ padding: "12px 14px", borderRadius: 8, background: "#f0fdf4", border: `1px solid #bbf7d0` }}>
+                    {feedbackStatus === "success" && (
+                      <div style={{ padding: "8px 12px", borderRadius: 6, background: "#ecfdf5", border: "1px solid #a7f3d0", marginBottom: 10, fontSize: 12, color: "#047857", fontWeight: 600 }}>
+                        ✅ Thanks! Feedback saved.
+                      </div>
+                    )}
+                    {feedbackStatus === "error" && (
+                      <div style={{ padding: "8px 12px", borderRadius: 6, background: "#fef2f2", border: "1px solid #fca5a5", marginBottom: 10, fontSize: 12, color: "#b91c1c", fontWeight: 600 }}>
+                        ❌ Error saving feedback. Please try again.
+                      </div>
+                    )}
                     <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 10 }}>Quick feedback</div>
                     <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                       <button onClick={() => setFeedbackData({...feedbackData, rating: "up"})}
@@ -2539,7 +2557,7 @@ function SkillMapper() {
                         style={{ flex: 1, padding: "6px", borderRadius: 6, border: "none", background: feedbackData.rating && feedbackData.comment.trim() ? "#16a34a" : "#d1d5db", color: "#fff", cursor: feedbackData.rating && feedbackData.comment.trim() ? "pointer" : "default", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
                         {feedbackLoading ? "…" : "Submit"}
                       </button>
-                      <button onClick={() => { setShowFeedback(false); setFeedbackData({ rating: "", comment: "" }); }}
+                      <button onClick={() => { setShowFeedback(false); setFeedbackData({ rating: "", comment: "" }); setFeedbackStatus(null); }}
                         style={{ flex: 1, padding: "6px", borderRadius: 6, border: `1px solid #d1d5db`, background: "transparent", color: C.textMuted, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
                         Cancel
                       </button>
