@@ -2403,22 +2403,24 @@ function SkillMapper() {
     if (!feedbackData.rating || !feedbackData.comment.trim()) return;
     setFeedbackLoading(true);
     try {
-      // Directly save to Supabase (no API needed for dev)
-      const { error } = await supabase.from("feedback").insert([
-        {
+      // Call API which handles both Supabase + Resend email
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           title: input.slice(0, 100),
           result: results.filter(r => r.normalized).length > 0 ? "matched" : "unmatched",
           rating: feedbackData.rating,
           comment: feedbackData.comment,
           page: "skill_mapper",
-        },
-      ]);
-      if (!error) {
+        }),
+      });
+      if (response.ok) {
         setShowFeedback(false);
         setFeedbackData({ rating: "", comment: "" });
-        console.log("✅ Feedback saved to Supabase");
+        console.log("✅ Feedback submitted with email");
       } else {
-        console.error("Supabase error:", error);
+        console.error("API error:", response.status);
       }
     } catch (error) {
       console.error("Feedback error:", error);
