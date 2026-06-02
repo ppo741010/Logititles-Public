@@ -1730,22 +1730,18 @@ function BulkAIBubble({ results }) {
     });
     const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,10).map(([s,c]) => `${s}(${c})`).join(", ");
 
-    // Salary by domain (try multiple field names)
+    // Salary by domain (check salaryBenchmark field)
     const salaryByDomain = {};
-    const salaryFieldsFound = new Set();
     inScope.forEach(r => {
-      if (r.domain) {
-        const salary = r.salary_median || r.salaryMedian || r.salary_range;
-        if (salary) {
-          salaryFieldsFound.add(Object.keys(r).find(k => r[k] === salary));
-          if (!salaryByDomain[r.domain]) salaryByDomain[r.domain] = [];
-          // Extract numeric value if it's a range string
-          const numValue = typeof salary === 'string'
-            ? parseInt(salary.match(/\d+/)?.[0])
-            : salary;
-          if (numValue && !isNaN(numValue)) {
-            salaryByDomain[r.domain].push(numValue);
-          }
+      if (r.domain && r.salaryBenchmark) {
+        if (!salaryByDomain[r.domain]) salaryByDomain[r.domain] = [];
+        // Extract numeric value from salaryBenchmark (e.g., "$85,000", "85000", or just 85000)
+        let numValue = r.salaryBenchmark;
+        if (typeof numValue === 'string') {
+          numValue = parseInt(numValue.replace(/[$,]/g, ''));
+        }
+        if (numValue && !isNaN(numValue)) {
+          salaryByDomain[r.domain].push(numValue);
         }
       }
     });
@@ -1756,14 +1752,13 @@ function BulkAIBubble({ results }) {
       }
     });
 
-    // DEBUG: Check what salary fields exist
+    // DEBUG: Check salary calculation
     if (inScope.length > 0) {
       const sampleRow = inScope[0];
       console.log("💰 Salary debug:", {
-        salaryFieldsFound: Array.from(salaryFieldsFound),
+        sampleRowSalaryBenchmark: sampleRow.salaryBenchmark,
         salaryByDomain: salaryByDomain,
-        sampleRowKeys: Object.keys(sampleRow).filter(k => k.toLowerCase().includes('salary')),
-        sampleRow_allKeys: Object.keys(sampleRow)
+        rowsWithSalary: inScope.filter(r => r.salaryBenchmark).length
       });
     }
 
