@@ -2936,6 +2936,13 @@ function About() {
       <SectionTitle children="About" sub="What this tool does, what it doesn't, and how it works." />
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
+        <Card style={{ background: "#fff8f0", border: `1px solid #fed7aa` }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#d97706", marginBottom: 9 }}>⚠️ Beta Stage</div>
+          <div style={{ fontSize: 14, color: C.textSub, lineHeight: 1.6 }}>
+            Logititles is currently in beta. Results are designed to support review, not replace human judgement. Classifications, salary estimates, and analysis are draft suggestions — always verify critical decisions with human review before acting.
+          </div>
+        </Card>
+
         <Card>
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18 }}>
             <div style={{ fontSize: 34 }}>📦</div>
