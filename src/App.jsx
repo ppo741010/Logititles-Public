@@ -3193,6 +3193,9 @@ function AIAssistant({ initialContext = "", onClearContext, bulkResults = [] }) 
   }
 
   async function send(text, ctx = "") {
+    alert("🔥 Main AI Send triggered");
+    console.warn("🔥 Main AI Send triggered");
+
     const msg = (text || input).trim();
     if (!msg || loading) return;
     setInput("");
