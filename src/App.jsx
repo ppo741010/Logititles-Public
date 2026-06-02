@@ -1730,13 +1730,13 @@ function BulkAIBubble({ results }) {
     });
     const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,10).map(([s,c]) => `${s}(${c})`).join(", ");
 
-    // Salary by domain (check salaryBenchmark field)
+    // Salary by domain (salaryBenchmark is an object with median property)
     const salaryByDomain = {};
     inScope.forEach(r => {
       if (r.domain && r.salaryBenchmark) {
         if (!salaryByDomain[r.domain]) salaryByDomain[r.domain] = [];
-        // Extract numeric value from salaryBenchmark (e.g., "$85,000", "85000", or just 85000)
-        let numValue = r.salaryBenchmark;
+        // salaryBenchmark is {currency: "NZD", median: 62000, range: "..."}
+        let numValue = r.salaryBenchmark.median || r.salaryBenchmark;
         if (typeof numValue === 'string') {
           numValue = parseInt(numValue.replace(/[$,]/g, ''));
         }
