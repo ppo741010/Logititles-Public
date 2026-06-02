@@ -1650,6 +1650,7 @@ function BulkAIBubble({ results }) {
       r.domain === "Out of scope";
 
     const isNeedsReviewRow = (r) =>
+      r.needsReview === true ||
       r.needs_review === true ||
       r.needs_review === "Yes" ||
       r.needs_review === "yes" ||
