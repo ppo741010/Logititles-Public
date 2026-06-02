@@ -2332,7 +2332,14 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
                 {total} rows · {structured} structured · {total - structured} flagged
               </div>
             </div>
-            <FeedbackForm page="bulk_upload" testInput={fileName} metadata={{ total_rows: total, structured, flagged: total - structured }} />
+            <FeedbackForm
+              page="bulk_upload"
+              testInput={fileName}
+              metadata={{
+                result: `${total} rows: ${structured} structured, ${total - structured} flagged`,
+                status: "bulk_complete"
+              }}
+            />
           </div>
         )}
       </div>
