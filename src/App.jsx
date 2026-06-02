@@ -1720,8 +1720,13 @@ function BulkAIBubble({ results }) {
 
     // Skill counts
     const skillCounts = {};
+    const skillDomainCounts = {};
     inScope.forEach(r => {
-      (r.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; });
+      (r.skills || []).forEach(s => {
+        skillCounts[s] = (skillCounts[s] || 0) + 1;
+        if (!skillDomainCounts[s]) skillDomainCounts[s] = {};
+        if (r.domain) skillDomainCounts[s][r.domain] = (skillDomainCounts[s][r.domain] || 0) + 1;
+      });
     });
     const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,10).map(([s,c]) => `${s}(${c})`).join(", ");
 
@@ -1768,6 +1773,7 @@ function BulkAIBubble({ results }) {
         out_of_scope_rows_sample: outOfScopeRowsSample
       },
       top_skills: topSkills,
+      skill_domain_counts: skillDomainCounts,
       salary_by_domain: salaryByDomain,
       instructions:
         "Use the provided derived statistics as the source of truth. " +
@@ -1778,6 +1784,7 @@ function BulkAIBubble({ results }) {
         "When asked 'Which titles need manual review?' or 'What needs review?', answer with review_required_count and list specific titles from review_rows_sample. " +
         "Review required includes: needs_review=true/Yes, status='Review recommended' or 'Low confidence', cross-functional signals, description-inferred, ambiguous titles, or flagged rows. " +
         "When asked about seniority, use seniority_counts and count totals. " +
+        "When asked about skills across domains, use skill_domain_counts (actual data, not inference) to show which domains use each skill. " +
         "Do not say data is unavailable if it is included in the context. " +
         "Always specify when excluding out-of-scope rows from domain/skill/seniority analysis. " +
         "Provide concrete examples from the sample rows, not generic explanations. " +
