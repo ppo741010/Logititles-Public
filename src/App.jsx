@@ -1836,13 +1836,16 @@ function BulkAIBubble({ results, user, supabase }) {
     setLoading(false);
 
     // Record AI usage (only if successful response)
-    if (!errorMsg && user) {
+    console.log("🔍 DEBUG: Recording check:", { errorMsg, user: user?.id, session: session?.user?.id });
+    if (!errorMsg && (user?.id || session?.user?.id)) {
+      const userId = user?.id || session?.user?.id;
       try {
+        console.log("📝 Attempting to record ai_used for user:", userId);
         // First, fetch current ai_used to avoid overwriting
         const { data: planData } = await supabase
           .from('user_plans')
           .select('ai_used')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .single();
 
         const currentAiUsed = planData?.ai_used || 0;
@@ -1850,14 +1853,14 @@ function BulkAIBubble({ results, user, supabase }) {
         const result = await supabase
           .from('user_plans')
           .update({ ai_used: currentAiUsed + 1 })
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
 
-        console.log(`✅ Recorded AI Assistant call for user ${user.id}. New ai_used: ${currentAiUsed + 1}`);
+        console.log(`✅ Recorded AI Assistant call for user ${userId}. New ai_used: ${currentAiUsed + 1}`);
       } catch (err) {
-        console.error("Failed to record ai_used:", err);
+        console.error("❌ Failed to record ai_used:", err);
       }
     } else {
-      console.warn("⚠️ AI usage not recorded:", { errorMsg, hasUser: !!user });
+      console.warn("⚠️ AI usage not recorded:", { errorMsg, hasUser: !!user, hasSession: !!session?.user?.id });
     }
   }
 
