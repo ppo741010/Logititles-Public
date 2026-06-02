@@ -1784,7 +1784,7 @@ function BulkAIBubble({ results }) {
       skill_domain_counts: skillDomainCounts,
       salary_by_domain: salaryByDomain,
       instructions:
-        "Use the provided derived statistics as the source of truth. " +
+        "Use the provided derived statistics as the source of truth. Base all insights on this dataset only. " +
         "Dataset has 9 classification domains: five core logistics domains (Warehouse, Transport, Freight Forwarding, Planning, Operations) and four supporting business functions (Finance, Sales, IT Support, Business Administration). " +
         "When asked about operational-heavy domains, prioritise Warehouse, Operations, Transport, and Freight Forwarding. Treat Planning as operationally adjacent but more analytical/planning-focused, not purely operational. " +
         "When asked about salary, use salary_by_domain (average median salary per domain). Always include this disclaimer: 'Market reference only. Actual salaries may vary by employer, experience, and location.' " +
@@ -1796,7 +1796,9 @@ function BulkAIBubble({ results }) {
         "Do not say data is unavailable if it is included in the context. " +
         "Always specify when excluding out-of-scope rows from domain/skill/seniority analysis. " +
         "Provide concrete examples from the sample rows, not generic explanations. " +
-        "When giving action items, keep recommendations concise and specific."
+        "Use conservative language for insights: 'This may suggest...', 'This could indicate...', 'Based on this upload only...' rather than absolute statements. " +
+        "When giving action items or observations, keep recommendations concise, specific, and grounded in the data shown. " +
+        "Avoid speculation beyond what the data shows. Focus on patterns visible in this dataset."
     };
 
     // DEBUG: Log the context to verify it's correct
