@@ -1855,9 +1855,6 @@ function BulkAIBubble({ results, user, supabase }) {
   }
 
   async function send() {
-    alert("🔥 AI Send triggered");
-    console.warn("🔥 AI Send triggered");
-
     const msg = input.trim();
     if (!msg || loading) return;
     setInput("");
@@ -3214,6 +3211,14 @@ function AIAssistant({ initialContext = "", onClearContext, bulkResults = [] }) 
       : null;
     setMessages(prev => [...prev, { role: "assistant", content: errorMsg || reply }]);
     setLoading(false);
+
+    // Record AI usage (only if successful response)
+    if (!errorMsg) {
+      console.log("📝 AI response success, calling incrementAiUsed");
+      await incrementAiUsed();
+    } else {
+      console.log("⏭️ AI response failed, skipping ai_used increment");
+    }
   }
 
   return (
@@ -3859,6 +3864,45 @@ export default function App() {
         setUserPlan(data);
       }
     }
+  }
+
+  // Helper: Increment AI usage with detailed logging
+  async function incrementAiUsed() {
+    console.log("🔍 incrementAiUsed called");
+
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+    console.log("incrementAiUsed authUser:", authUser?.id);
+    console.log("incrementAiUsed userError:", userError);
+
+    if (userError || !authUser) {
+      console.warn("⚠️ No logged-in user, cannot update ai_used");
+      return;
+    }
+
+    const { data: currentRows, error: fetchError } = await supabase
+      .from("user_plans")
+      .select("ai_used")
+      .eq("user_id", authUser.id)
+      .single();
+
+    console.log("📊 current ai_used:", currentRows?.ai_used);
+    console.log("📊 fetch error:", fetchError);
+
+    if (fetchError) {
+      console.error("❌ Fetch error (RLS or table issue?):", fetchError.message);
+      return;
+    }
+
+    const nextAiUsed = (currentRows?.ai_used || 0) + 1;
+
+    const { data, error } = await supabase
+      .from("user_plans")
+      .update({ ai_used: nextAiUsed })
+      .eq("user_id", authUser.id)
+      .select();
+
+    console.log("✅ Update result:", data);
+    console.log("❌ Update error (RLS/column issue?):", error);
   }
 
   const planKey = userPlan?.plan ?? (user ? "basic" : "guest");
