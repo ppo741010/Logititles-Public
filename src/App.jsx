@@ -1834,6 +1834,19 @@ function BulkAIBubble({ results }) {
       : null;
     setMessages(prev => [...prev, { role: "assistant", content: errorMsg || reply }]);
     setLoading(false);
+
+    // Record AI usage (only if successful response)
+    if (!errorMsg && user && userPlan) {
+      try {
+        await supabase
+          .from('user_plans')
+          .update({ ai_used: (userPlan.ai_used || 0) + 1 })
+          .eq('user_id', user.id);
+        console.log(`✅ Recorded AI Assistant call for user ${user.id}`);
+      } catch (err) {
+        console.error("Failed to record ai_used:", err);
+      }
+    }
   }
 
   return (
@@ -2054,6 +2067,20 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     setResults(allResults);
     onResultsReady && onResultsReady(allResults);
     setPhase("done");
+
+    // Record bulk usage
+    if (user && userPlan) {
+      const rowsProcessed = allResults.length;
+      try {
+        await supabase
+          .from('user_plans')
+          .update({ bulk_used: (userPlan.bulk_used || 0) + rowsProcessed })
+          .eq('user_id', user.id);
+        console.log(`✅ Recorded ${rowsProcessed} rows for user ${user.id}`);
+      } catch (err) {
+        console.error("Failed to record bulk_used:", err);
+      }
+    }
   }
 
   async function previewCleaning() {
