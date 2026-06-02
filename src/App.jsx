@@ -3826,9 +3826,10 @@ export default function App() {
   async function fetchPlan(uid) {
     const { data } = await supabase.from("user_plans").select("*").eq("user_id", uid).single();
     if (!data) {
-      // First login — create basic plan
+      // First login — create basic plan with email
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       const { data: created } = await supabase.from("user_plans")
-        .insert({ user_id: uid, plan: "basic" }).select().single();
+        .insert({ user_id: uid, plan: "basic", email: authUser?.email }).select().single();
       setUserPlan(created);
     } else {
       // Auto-reset if period expired (skip if no end date set)
