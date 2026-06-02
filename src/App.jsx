@@ -1335,7 +1335,7 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin,
                   </button>
                 </div>
               )}
-              <FeedbackForm page="single_analyzer" testInput={title} metadata={{ domain: result.domain, confidence: result.confidence, status: getStatusLabel(result) }} />
+              <FeedbackForm page="single_analyzer" testInput={title} metadata={{ domain: result.domain, confidence: result.confidence, status: getStatusLabel(result), out_of_scope: result.out_of_scope }} />
             </div>
           )}
         </div>
@@ -2474,7 +2474,7 @@ function SkillMapper() {
                   <strong>Common variants</strong> like "wms software", "warehouse management system", "wms" all map to the same canonical label.
                 </div>
 
-                <FeedbackForm page="skill_mapper" testInput={input} metadata={{ matched, unmatched }} />
+                <FeedbackForm page="skill_mapper" testInput={input} metadata={{ result: `${matched} matched, ${unmatched} unmatched`, status: "skill_mapping_complete" }} />
               </div>
             )}
         </Card>
@@ -2603,7 +2603,7 @@ function TitleCleaner() {
         })()}
         {manualResult && (
           <div style={{ borderTop: `1px solid ${C.border}`, padding: "12px 18px", background: C.card }}>
-            <FeedbackForm page="title_cleaner" testInput={manualInput} metadata={{ domain: manualResult.domain, confidence: manualResult.confidence, status: getStatusLabel(manualResult) }} />
+            <FeedbackForm page="title_cleaner" testInput={manualInput} metadata={{ domain: manualResult.domain, confidence: manualResult.confidence, status: getStatusLabel(manualResult), out_of_scope: manualResult.out_of_scope }} />
           </div>
         )}
       </Card>
