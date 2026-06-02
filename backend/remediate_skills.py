@@ -79,7 +79,6 @@ CONSOLIDATION_MAP = {
     # AI/ML
     "machine learning": "AI/ML Product Development",
     "ml": "AI/ML Product Development",
-    "generative ai": "AI Strategy Development",
     "prompt engineering": "AI Project Support",
     "rpa": "Process Automation",
     "robotic process automation": "Process Automation",
@@ -117,12 +116,10 @@ CONSOLIDATION_MAP = {
     "crm software": "CRM Data Management",
     "crm proficiency": "CRM Data Management",
     "customer relationship management": "CRM Data Management",
-    "ai": "AI Strategy Development",
-    "gen ai": "AI Strategy Development",
-    "chatgpt": "AI Strategy Development",
-    "llm": "AI Strategy Development",
-    "large language model": "AI Strategy Development",
-    "gpt": "AI Strategy Development",
+    "ai strategy": "AI Strategy Development",
+    "ai automation": "AI Strategy Development",
+    "digital transformation": "AI Strategy Development",
+    "automation strategy": "AI Strategy Development",
     "no-code": "Process Automation",
     "low-code": "Process Automation",
     "no code": "Process Automation",
@@ -131,21 +128,14 @@ CONSOLIDATION_MAP = {
     "ms copilot": "AI Project Support",
     "vmi management": "Inventory Management",
 
-    # Additional variants for AI/automation/picking
-    "artificial intelligence": "AI Strategy Development",
-    "ai agent": "AI Strategy Development",
-    "ai agents": "AI Strategy Development",
+    # Additional variants for automation/picking
     "no code tools": "Process Automation",
     "picking": "Warehouse Operations",
     "order picking": "Warehouse Operations",
     "pick and pack": "Warehouse Operations",
-    "claude": "AI Strategy Development",
-    "gemini": "AI Strategy Development",
-    "grok": "AI Strategy Development",
     "vlookup": "Excel Modeling",
 
     # More missing variants
-    "agentic ai": "AI Strategy Development",
     "pick & pack": "Warehouse Operations",
     "pick/pack": "Warehouse Operations",
     "microsoft 365": "Office Software Proficiency",
