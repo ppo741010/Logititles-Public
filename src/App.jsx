@@ -1836,16 +1836,19 @@ function BulkAIBubble({ results }) {
     setLoading(false);
 
     // Record AI usage (only if successful response)
+    console.log("🔍 AI usage recording:", { errorMsg, user: user?.id, userPlan: userPlan?.plan, reply: reply?.substring(0, 50) });
     if (!errorMsg && user && userPlan) {
       try {
-        await supabase
+        const result = await supabase
           .from('user_plans')
           .update({ ai_used: (userPlan.ai_used || 0) + 1 })
           .eq('user_id', user.id);
-        console.log(`✅ Recorded AI Assistant call for user ${user.id}`);
+        console.log(`✅ Recorded AI Assistant call for user ${user.id}`, result);
       } catch (err) {
         console.error("Failed to record ai_used:", err);
       }
+    } else {
+      console.warn("⚠️ AI usage not recorded:", { errorMsg, hasUser: !!user, hasUserPlan: !!userPlan });
     }
   }
 
