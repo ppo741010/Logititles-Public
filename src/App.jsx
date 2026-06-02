@@ -1836,19 +1836,28 @@ function BulkAIBubble({ results }) {
     setLoading(false);
 
     // Record AI usage (only if successful response)
-    console.log("🔍 AI usage recording:", { errorMsg, user: user?.id, userPlan: userPlan?.plan, reply: reply?.substring(0, 50) });
-    if (!errorMsg && user && userPlan) {
+    if (!errorMsg && user) {
       try {
+        // First, fetch current ai_used to avoid overwriting
+        const { data: planData } = await supabase
+          .from('user_plans')
+          .select('ai_used')
+          .eq('user_id', user.id)
+          .single();
+
+        const currentAiUsed = planData?.ai_used || 0;
+
         const result = await supabase
           .from('user_plans')
-          .update({ ai_used: (userPlan.ai_used || 0) + 1 })
+          .update({ ai_used: currentAiUsed + 1 })
           .eq('user_id', user.id);
-        console.log(`✅ Recorded AI Assistant call for user ${user.id}`, result);
+
+        console.log(`✅ Recorded AI Assistant call for user ${user.id}. New ai_used: ${currentAiUsed + 1}`);
       } catch (err) {
         console.error("Failed to record ai_used:", err);
       }
     } else {
-      console.warn("⚠️ AI usage not recorded:", { errorMsg, hasUser: !!user, hasUserPlan: !!userPlan });
+      console.warn("⚠️ AI usage not recorded:", { errorMsg, hasUser: !!user });
     }
   }
 
@@ -2072,14 +2081,24 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     setPhase("done");
 
     // Record bulk usage
-    if (user && userPlan) {
+    if (user) {
       const rowsProcessed = allResults.length;
       try {
+        // Fetch current bulk_used to avoid overwriting
+        const { data: planData } = await supabase
+          .from('user_plans')
+          .select('bulk_used')
+          .eq('user_id', user.id)
+          .single();
+
+        const currentBulkUsed = planData?.bulk_used || 0;
+
         await supabase
           .from('user_plans')
-          .update({ bulk_used: (userPlan.bulk_used || 0) + rowsProcessed })
+          .update({ bulk_used: currentBulkUsed + rowsProcessed })
           .eq('user_id', user.id);
-        console.log(`✅ Recorded ${rowsProcessed} rows for user ${user.id}`);
+
+        console.log(`✅ Recorded ${rowsProcessed} rows for user ${user.id}. New bulk_used: ${currentBulkUsed + rowsProcessed}`);
       } catch (err) {
         console.error("Failed to record bulk_used:", err);
       }
