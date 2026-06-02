@@ -1627,7 +1627,7 @@ function ResultCharts({ results }) {
   );
 }
 
-function BulkAIBubble({ results }) {
+function BulkAIBubble({ results, onOpenInPage }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi! Ask me anything about your classified data — domain breakdown, skills, salary, or specific titles." }
@@ -1843,6 +1843,18 @@ function BulkAIBubble({ results }) {
               style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: loading || !input.trim() ? C.border : C.accent, color: loading || !input.trim() ? C.textMuted : "#fff", fontWeight: 700, fontSize: 12, cursor: loading || !input.trim() ? "default" : "pointer", fontFamily: "inherit" }}
             >Send</button>
           </div>
+
+          {/* Open in page link */}
+          {messages.length > 1 && onOpenInPage && (
+            <div style={{ padding: "8px 12px", borderTop: `1px solid ${C.border}`, background: C.bg, textAlign: "center" }}>
+              <button
+                onClick={() => onOpenInPage(messages)}
+                style={{ fontSize: 11, color: C.accent, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}
+              >
+                Continue in full AI Assistant →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </>
@@ -2269,7 +2281,16 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
 
         {/* Charts — shown when done */}
         {phase === "done" && <ResultCharts results={results} />}
-        {phase === "done" && planKey === "pro" && <BulkAIBubble results={results} />}
+        {phase === "done" && planKey === "pro" && (
+          <BulkAIBubble
+            results={results}
+            onOpenInPage={(messages) => {
+              const conversationContext = messages.map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n\n");
+              setAiContext(conversationContext);
+              setPage("ai");
+            }}
+          />
+        )}
         {phase === "done" && planKey !== "pro" && (
           <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 200 }}>
             <div style={{ background: "#1e1b4b", color: "#c7d2fe", borderRadius: 16, padding: "12px 18px", maxWidth: 280, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", fontSize: 13 }}>
