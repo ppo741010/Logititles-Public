@@ -1772,7 +1772,8 @@ function BulkAIBubble({ results }) {
       instructions:
         "Use the provided derived statistics as the source of truth. " +
         "Dataset has 9 classification domains: five core logistics domains (Warehouse, Transport, Freight Forwarding, Planning, Operations) and four supporting business functions (Finance, Sales, IT Support, Business Administration). " +
-        "When asked about salary, use salary_by_domain (average median salary per domain). Always note: 'Market reference only, based on NZ/AU data.'" +
+        "When asked about operational-heavy domains, prioritise Warehouse, Operations, Transport, and Freight Forwarding. Treat Planning as operationally adjacent but more analytical/planning-focused, not purely operational. " +
+        "When asked about salary, use salary_by_domain (average median salary per domain). Always note: 'Market reference only, based on NZ/AU data.' " +
         "When asked 'Which rows are out of scope?', answer with out_of_scope_count and list specific titles from out_of_scope_rows_sample. " +
         "When asked 'Which titles need manual review?' or 'What needs review?', answer with review_required_count and list specific titles from review_rows_sample. " +
         "Review required includes: needs_review=true/Yes, status='Review recommended' or 'Low confidence', cross-functional signals, description-inferred, ambiguous titles, or flagged rows. " +
