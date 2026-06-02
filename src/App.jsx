@@ -1725,17 +1725,28 @@ function BulkAIBubble({ results }) {
     });
     const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,10).map(([s,c]) => `${s}(${c})`).join(", ");
 
-    // Salary by domain
+    // Salary by domain (try multiple field names)
     const salaryByDomain = {};
     inScope.forEach(r => {
-      if (r.domain && r.salary_median) {
-        if (!salaryByDomain[r.domain]) salaryByDomain[r.domain] = [];
-        salaryByDomain[r.domain].push(r.salary_median);
+      if (r.domain) {
+        const salary = r.salary_median || r.salaryMedian || r.salary_range;
+        if (salary) {
+          if (!salaryByDomain[r.domain]) salaryByDomain[r.domain] = [];
+          // Extract numeric value if it's a range string
+          const numValue = typeof salary === 'string'
+            ? parseInt(salary.match(/\d+/)?.[0])
+            : salary;
+          if (numValue && !isNaN(numValue)) {
+            salaryByDomain[r.domain].push(numValue);
+          }
+        }
       }
     });
     Object.keys(salaryByDomain).forEach(d => {
       const arr = salaryByDomain[d];
-      salaryByDomain[d] = Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+      if (arr.length > 0) {
+        salaryByDomain[d] = Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+      }
     });
 
     // Build structured context
@@ -1760,13 +1771,16 @@ function BulkAIBubble({ results }) {
       salary_by_domain: salaryByDomain,
       instructions:
         "Use the provided derived statistics as the source of truth. " +
+        "Dataset has 9 classification domains: five core logistics domains (Warehouse, Transport, Freight Forwarding, Planning, Operations) and four supporting business functions (Finance, Sales, IT Support, Business Administration). " +
+        "When asked about salary, use salary_by_domain (average median salary per domain). Always note: 'Market reference only, based on NZ/AU data.'" +
         "When asked 'Which rows are out of scope?', answer with out_of_scope_count and list specific titles from out_of_scope_rows_sample. " +
         "When asked 'Which titles need manual review?' or 'What needs review?', answer with review_required_count and list specific titles from review_rows_sample. " +
         "Review required includes: needs_review=true/Yes, status='Review recommended' or 'Low confidence', cross-functional signals, description-inferred, ambiguous titles, or flagged rows. " +
         "When asked about seniority, use seniority_counts and count totals. " +
         "Do not say data is unavailable if it is included in the context. " +
         "Always specify when excluding out-of-scope rows from domain/skill/seniority analysis. " +
-        "Provide concrete examples from the sample rows, not generic explanations."
+        "Provide concrete examples from the sample rows, not generic explanations. " +
+        "When giving action items, keep recommendations concise and specific."
     };
 
     // DEBUG: Log the context to verify it's correct
