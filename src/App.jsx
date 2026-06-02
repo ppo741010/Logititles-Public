@@ -1641,19 +1641,112 @@ function BulkAIBubble({ results }) {
   }, [messages, loading, open]);
 
   function buildContext() {
-    const domainCounts = {};
-    const skillCounts = {};
+    const total = results.length;
     const inScope = results.filter(r => !isOutOfScope(r));
-    const lowConf  = inScope.filter(r => r.confidence < 55).length;
+    const outOfScope = total - inScope.length;
+
+    // Domain counts
+    const domainCounts = {};
     inScope.forEach(r => {
       if (r.domain) domainCounts[r.domain] = (domainCounts[r.domain] || 0) + 1;
+    });
+
+    // Seniority counts (exclude out-of-scope)
+    const seniorityCounts = {};
+    inScope.forEach(r => {
+      if (r.seniority && r.seniority !== "Review Required") {
+        seniorityCounts[r.seniority] = (seniorityCounts[r.seniority] || 0) + 1;
+      }
+    });
+
+    // Status counts
+    const statusCounts = {};
+    inScope.forEach(r => {
+      const status = r.status || "Unknown";
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
+    // Review required rows (multi-condition)
+    const reviewRows = results.filter(r =>
+      r.needs_review === true ||
+      r.needs_review === "Yes" ||
+      r.status === "Review recommended" ||
+      r.status === "Low confidence"
+    );
+    const reviewRowsSample = reviewRows.slice(0, 20).map(r => ({
+      raw_title: r.raw_title,
+      clean_title: r.clean_title,
+      domain: r.domain,
+      confidence: r.confidence,
+      status: r.status,
+      flags: r.flags?.join("; ") || ""
+    }));
+
+    // Out-of-scope rows (multi-condition)
+    const outOfScopeRows = results.filter(r =>
+      r.out_of_scope === true ||
+      r.out_of_scope === "Yes" ||
+      r.status === "Out of scope" ||
+      r.domain === "Out of scope"
+    );
+    const outOfScopeRowsSample = outOfScopeRows.slice(0, 20).map(r => ({
+      raw_title: r.raw_title,
+      clean_title: r.clean_title,
+      confidence: r.confidence,
+      status: r.status,
+      flags: r.flags?.join("; ") || ""
+    }));
+
+    // Skill counts
+    const skillCounts = {};
+    inScope.forEach(r => {
       (r.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; });
     });
-    const topDomains = Object.entries(domainCounts).sort((a,b) => b[1]-a[1]).map(([d,c]) => `${d}: ${c}`).join(", ");
-    const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,8).map(([s,c]) => `${s}(${c})`).join(", ");
-    const total = results.length;
-    const outOfScope = results.filter(r => isOutOfScope(r)).length;
-    return `Dataset summary: ${total} records total. Out-of-scope (excluded from analysis): ${outOfScope}. Low-confidence rows (review recommended): ${lowConf}. All domain/skill counts below exclude out-of-scope rows. Domain breakdown (in-scope only): ${topDomains}. Top skills (in-scope only): ${topSkills}. When answering questions about domains or skills, always specify you are excluding out-of-scope rows. Do not estimate salary for out-of-scope or low-confidence rows.`;
+    const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,10).map(([s,c]) => `${s}(${c})`).join(", ");
+
+    // Salary by domain
+    const salaryByDomain = {};
+    inScope.forEach(r => {
+      if (r.domain && r.salary_median) {
+        if (!salaryByDomain[r.domain]) salaryByDomain[r.domain] = [];
+        salaryByDomain[r.domain].push(r.salary_median);
+      }
+    });
+    Object.keys(salaryByDomain).forEach(d => {
+      const arr = salaryByDomain[d];
+      salaryByDomain[d] = Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+    });
+
+    // Build structured context
+    const aiContext = {
+      summary: {
+        total_rows: total,
+        structured_count: inScope.length,
+        review_required_count: reviewRows.length,
+        out_of_scope_count: outOfScope,
+        in_scope_count: inScope.length
+      },
+      counts: {
+        domain_counts: domainCounts,
+        seniority_counts: seniorityCounts,
+        status_counts: statusCounts
+      },
+      samples: {
+        review_rows_sample: reviewRowsSample,
+        out_of_scope_rows_sample: outOfScopeRowsSample
+      },
+      top_skills: topSkills,
+      salary_by_domain: salaryByDomain,
+      instructions:
+        "Use the provided derived statistics as the source of truth. " +
+        "When asked about rows needing review, use review_required_count and review_rows_sample, not only low-confidence rows. " +
+        "When asked about out-of-scope rows, use out_of_scope_count and out_of_scope_rows_sample. " +
+        "When asked about seniority, use seniority_counts. " +
+        "Do not say data is unavailable if it is included in the context. " +
+        "Always specify when excluding out-of-scope rows from domain/skill/seniority analysis."
+    };
+
+    return JSON.stringify(aiContext, null, 2);
   }
 
   async function send() {
