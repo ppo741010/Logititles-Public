@@ -1662,6 +1662,21 @@ function BulkAIBubble({ results }) {
     const outOfScopeRows = results.filter(isOutOfScopeRow);
     const reviewRows = inScope.filter(isNeedsReviewRow);
 
+    // DEBUG: Check actual data format
+    if (inScope.length > 0) {
+      const sampleRow = inScope[0];
+      console.log("🔍 Sample in-scope row:", {
+        needs_review: sampleRow.needs_review,
+        status: sampleRow.status,
+        needsReview: sampleRow.needsReview,
+        raw_data: sampleRow
+      });
+      console.log("🔍 isNeedsReviewRow check:", isNeedsReviewRow(sampleRow));
+      console.log("🔍 inScope rows with needs_review:", inScope.filter(r => r.needs_review || r.needsReview).length);
+      console.log("🔍 inScope rows with Review status:", inScope.filter(r => r.status?.includes("Review")).length);
+      console.log("🔍 Total reviewRows:", reviewRows.length);
+    }
+
     // Domain counts
     const domainCounts = {};
     inScope.forEach(r => {
