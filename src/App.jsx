@@ -1855,6 +1855,9 @@ function BulkAIBubble({ results, user, supabase }) {
   }
 
   async function send() {
+    alert("🔥 AI Send triggered");
+    console.warn("🔥 AI Send triggered");
+
     const msg = input.trim();
     if (!msg || loading) return;
     setInput("");
