@@ -1627,7 +1627,7 @@ function ResultCharts({ results }) {
   );
 }
 
-function BulkAIBubble({ results }) {
+function BulkAIBubble({ results, user, supabase }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState([
@@ -2392,7 +2392,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
 
         {/* Charts — shown when done */}
         {phase === "done" && <ResultCharts results={results} />}
-        {phase === "done" && planKey === "pro" && <BulkAIBubble results={results} />}
+        {phase === "done" && planKey === "pro" && <BulkAIBubble results={results} user={user} supabase={supabase} />}
         {phase === "done" && planKey !== "pro" && (
           <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 200 }}>
             <div style={{ background: "#1e1b4b", color: "#c7d2fe", borderRadius: 16, padding: "12px 18px", maxWidth: 280, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", fontSize: 13 }}>
