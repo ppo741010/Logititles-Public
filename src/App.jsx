@@ -1627,8 +1627,9 @@ function ResultCharts({ results }) {
   );
 }
 
-function BulkAIBubble({ results, onOpenInPage }) {
+function BulkAIBubble({ results }) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi! Ask me anything about your classified data — domain breakdown, skills, salary, or specific titles." }
   ]);
@@ -1791,19 +1792,27 @@ function BulkAIBubble({ results, onOpenInPage }) {
       {/* Chat panel */}
       {open && (
         <div style={{
-          position: "fixed", bottom: 92, right: 28, zIndex: 999,
-          width: 360, height: 480,
-          background: C.card, borderRadius: 16,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+          position: "fixed",
+          ...(expanded ? { inset: 0, borderRadius: 0, bottom: "auto", right: "auto", width: "100%", height: "100%", zIndex: 1001 } : { bottom: 92, right: 28, width: 360, height: 480, zIndex: 999, borderRadius: 16 }),
+          background: C.card,
+          boxShadow: expanded ? "none" : "0 8px 32px rgba(0,0,0,0.15)",
           border: `1px solid ${C.border}`,
           display: "flex", flexDirection: "column", overflow: "hidden",
         }}>
           {/* Header */}
-          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, background: C.accent, color: "#fff" }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>✨ AI Assistant</div>
-            <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>
-              {results.length > 0 ? `Analysing ${results.length} classified records` : "Ask about logistics job titles"}
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, background: C.accent, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>✨ AI Assistant</div>
+              <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>
+                {results.length > 0 ? `Analysing ${results.length} classified records` : "Ask about logistics job titles"}
+              </div>
             </div>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit" }}
+            >
+              {expanded ? "−" : "+"}
+            </button>
           </div>
 
           {/* Messages */}
@@ -1843,18 +1852,6 @@ function BulkAIBubble({ results, onOpenInPage }) {
               style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: loading || !input.trim() ? C.border : C.accent, color: loading || !input.trim() ? C.textMuted : "#fff", fontWeight: 700, fontSize: 12, cursor: loading || !input.trim() ? "default" : "pointer", fontFamily: "inherit" }}
             >Send</button>
           </div>
-
-          {/* Open in page link */}
-          {messages.length > 1 && onOpenInPage && (
-            <div style={{ padding: "8px 12px", borderTop: `1px solid ${C.border}`, background: C.bg, textAlign: "center" }}>
-              <button
-                onClick={() => onOpenInPage(messages)}
-                style={{ fontSize: 11, color: C.accent, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}
-              >
-                Continue in full AI Assistant →
-              </button>
-            </div>
-          )}
         </div>
       )}
     </>
@@ -2281,16 +2278,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
 
         {/* Charts — shown when done */}
         {phase === "done" && <ResultCharts results={results} />}
-        {phase === "done" && planKey === "pro" && (
-          <BulkAIBubble
-            results={results}
-            onOpenInPage={(messages) => {
-              const conversationContext = messages.map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n\n");
-              setAiContext(conversationContext);
-              setPage("ai");
-            }}
-          />
-        )}
+        {phase === "done" && planKey === "pro" && <BulkAIBubble results={results} />}
         {phase === "done" && planKey !== "pro" && (
           <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 200 }}>
             <div style={{ background: "#1e1b4b", color: "#c7d2fe", borderRadius: 16, padding: "12px 18px", maxWidth: 280, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", fontSize: 13 }}>
