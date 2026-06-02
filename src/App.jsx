@@ -116,11 +116,13 @@ function FeedbackForm({ page = "", testInput = "", metadata = {} }) {
       const { error } = await supabase.from("feedback").insert([
         {
           page,
-          test_input: testInput.slice(0, 100),
+          title: testInput.slice(0, 100),
           rating,
           comment: comment.trim(),
-          metadata: JSON.stringify(metadata),
-          submitted_at: new Date().toISOString(),
+          result: metadata.result || "",
+          confidence: metadata.confidence || null,
+          status: metadata.status || null,
+          out_of_scope: metadata.out_of_scope || null,
         },
       ]);
       if (!error) {
