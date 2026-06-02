@@ -1,0 +1,61 @@
+{
+  "_META": {
+    "note": "Sample of skill normalization logic. Full mapping (1461 entries) is in private repository.",
+    "version": "v1.5.1 — 20 sample entries",
+    "usage": "Shows how raw skill strings from job listings are normalized to canonical names.",
+    "sections": {
+      "skill_synonyms": "Raw skill string (lowercase) → canonical display name",
+      "abbreviations": "Terms that must stay uppercase",
+      "junk_values": "Strings to filter out",
+      "soft_skills": "Generic soft skills to exclude from analysis"
+    }
+  },
+  "skill_synonyms": {
+    "wms": "WMS",
+    "warehouse management systems": "WMS",
+    "wms software": "WMS",
+    "tms": "TMS",
+    "transport management systems": "TMS",
+    "erp": "ERP Systems",
+    "erp systems": "ERP Systems",
+    "crm": "CRM Data Management",
+    "customer relationship management": "CRM Data Management",
+    "excel": "Office Software Proficiency",
+    "microsoft excel": "Office Software Proficiency",
+    "power bi": "Data Analytics & Visualization",
+    "data analytics": "Data Analytics & Visualization",
+    "sql": "Database Management",
+    "mysql": "Database Management",
+    "python": "Programming Languages",
+    "api integration": "API Integration",
+    "automation": "Process Automation",
+    "rpa": "Process Automation",
+    "supply chain": "Supply Chain Management"
+  },
+  "abbreviations": [
+    "WMS",
+    "TMS",
+    "ERP",
+    "CRM",
+    "SQL",
+    "API",
+    "RPA",
+    "KPI",
+    "ROI"
+  ],
+  "junk_values": [
+    "none",
+    "n/a",
+    "na",
+    "none.",
+    "not applicable"
+  ],
+  "soft_skills": [
+    "teamwork",
+    "communication",
+    "problem solving",
+    "leadership",
+    "time management",
+    "attention to detail"
+  ]
+}

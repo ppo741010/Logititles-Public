@@ -42,7 +42,21 @@ update.txt
 *.csv
 Seek_Job/
 seek_job/
-api/
-!api/feedback.js
-!api/stripe-webhook.js
+
+# Proprietary JSON / rules - keep only samples
+backend/json/skill_normalize.json
+backend/json/skills_knowledge_map.json
+backend/json/*benchmark*.json
+backend/json/*.json
+!backend/json/sample_*.json
+
+# API secrets
+api/.env*
+api/*secret*
+api/*key*
+
+# Local data
+data/
+exports/
+backups/
 
