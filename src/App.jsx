@@ -1003,15 +1003,15 @@ const inputStyle = {
 function LandingPage({ onEnter }) {
   const isMobile = useIsMobile();
   const features = [
-    { icon: "✏️", title: "Clean Titles",       desc: "Removes noise, expands abbreviations, strips location and shift suffixes automatically." },
-    { icon: "🏷️", title: "Classify Roles",     desc: "Suggests functional area, seniority level, and work nature using a rule-based taxonomy." },
-    { icon: "🧩", title: "Normalize Skills",   desc: "Maps raw skill phrases like 'WMS software' or 'advanced excel' to standard canonical labels." },
-    { icon: "📂", title: "Bulk Processing",    desc: "Upload CSV or XLSX files. Row limits depend on your plan (100 rows on Guest, 1,000 on Basic, 10,000 on Pro)." },
-    { icon: "📈", title: "Data Analysis",      desc: "Auto-generate charts — domain distribution, seniority breakdown, top skills, and salary reference fields where available. Export as PNG or PDF." },
-    { icon: "✨", title: "AI Assistant",       desc: "Ask questions about your classified data in plain English. Hiring trends, skill gaps, salary comparisons and more. Pro plan." },
+    { icon: "✏️", title: "Fix Messy Titles",       desc: "Removes noise, expands abbreviations, strips location and shift suffixes automatically." },
+    { icon: "🏷️", title: "See Role Categories",     desc: "Understand what type of logistics role each title is—warehouse, transport, planning, operations, or others." },
+    { icon: "🧩", title: "Map Skills",   desc: "Turn raw skill phrases like 'WMS software' or 'advanced excel' into standard skill categories." },
+    { icon: "📂", title: "Clean Hundreds or Thousands",    desc: "Upload CSV or XLSX files. Process 100 titles on Guest, 1,000 on Basic, or 10,000 on Pro—instantly." },
+    { icon: "📈", title: "Turn Data Into Charts",      desc: "See domain breakdown, seniority distribution, top skills, and salary ranges. Export as PNG, PDF, or CSV." },
+    { icon: "✨", title: "Ask Questions About Your Data",       desc: "Ask in plain English about hiring trends, skill gaps, salary comparisons. Pro plan feature." },
   ];
 
-  const audiences = ["Recruiters cleaning job ad data", "HR teams standardizing job title libraries", "Analysts normalizing workforce data", "Operations teams building role taxonomies"];
+  const audiences = ["Recruiters — clean titles before reporting", "HR teams — standardize job title data", "Analysts — turn raw listings into categories", "Researchers — prepare clean datasets"];
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a5f 100%)", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif", display: "flex", flexDirection: "column" }}>
@@ -1030,20 +1030,20 @@ function LandingPage({ onEnter }) {
       {/* Hero */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 24px 56px", textAlign: "center" }}>
         <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.1)", color: "#c7d2fe", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 28 }}>
-          Workflow Utility Tool · Logistics
+          Clean Data, Better Decisions · Logistics
         </div>
         <h1 style={{ color: "#fff", fontSize: 46, fontWeight: 800, maxWidth: 680, lineHeight: 1.18, margin: "0 0 22px", letterSpacing: "-0.02em" }}>
-          Turn messy logistics job titles into structured data
+          Turn messy logistics job titles into clean, report-ready data.
         </h1>
-        <p style={{ color: "#c7d2fe", fontSize: 17, maxWidth: 540, lineHeight: 1.75, margin: "0 0 38px" }}>
-          A rule-based workflow tool that cleans and structures messy logistics job titles into reviewable, export-ready data.
+        <p style={{ color: "#c7d2fe", fontSize: 17, maxWidth: 580, lineHeight: 1.75, margin: "0 0 38px" }}>
+          Upload a spreadsheet or paste a title. Logititles cleans inconsistent role names, groups them into useful logistics categories, flags uncertain results, and prepares your data for charts, reports, and export.
         </p>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-          <button onClick={() => onEnter()} style={{ padding: "13px 32px", borderRadius: 9, background: "#fff", color: "#4f46e5", border: "none", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em" }}>
-            Enter App →
+          <button onClick={() => onEnter("analyzer")} style={{ padding: "13px 32px", borderRadius: 9, background: "#fff", color: "#4f46e5", border: "none", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em" }}>
+            Try a Title Free →
           </button>
-          <button onClick={() => onEnter("analyzer")} style={{ padding: "13px 28px", borderRadius: 9, background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.35)", fontWeight: 600, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
-            Try Single Analyzer
+          <button onClick={() => onEnter("bulk")} style={{ padding: "13px 28px", borderRadius: 9, background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.35)", fontWeight: 600, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}>
+            Upload Sample CSV
           </button>
         </div>
       </div>
