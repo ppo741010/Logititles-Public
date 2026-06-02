@@ -2573,8 +2573,8 @@ function SkillMapper() {
     return JOB_TITLE_KEYWORDS.has(lastWord);
   }
 
-  function mapSkills() {
-    const phrases = input.split(/[,\n]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
+  function mapSkillsFromText(text) {
+    const phrases = text.split(/[,\n]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
     const jobTitleCount = phrases.filter(looksLikeJobTitle).length;
     setHasJobTitleWarning(jobTitleCount > 0);
     setResults(phrases.map(phrase => {
@@ -2584,6 +2584,10 @@ function SkillMapper() {
       const looksLikeTitle = looksLikeJobTitle(phrase);
       return { raw: phrase, normalized: match ? match[1] : null, tooBroad, looksLikeTitle };
     }));
+  }
+
+  function mapSkills() {
+    mapSkillsFromText(input);
   }
 
   function exportResults() {
@@ -2609,7 +2613,7 @@ function SkillMapper() {
             style={{ ...inputStyle, resize: "vertical", fontFamily: "monospace", fontSize: 13 }} />
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "10px 0" }}>
             {EXAMPLES.map(ex => (
-              <button key={ex} onClick={() => { setInput(ex); setResults([]); }}
+              <button key={ex} onClick={() => { setInput(ex); mapSkillsFromText(ex); }}
                 style={{ padding: "4px 11px", borderRadius: 20, border: `1px solid ${C.border}`, background: C.bg, fontSize: 11, cursor: "pointer", color: C.textMuted, fontFamily: "inherit" }}>
                 {ex.slice(0, 34)}…
               </button>
@@ -2689,7 +2693,7 @@ const TC_SAMPLES = [
   "Jr Logistics Admin",
   "Hiring Now: Freight Coordinator",
   "Warehouse Assistant - Auckland",
-  "DC Supervisor",
+  "Retail Health Consultant",
   "Import/Export Admin",
   "SUPPLY CHAIN MANAGER",
   "Ops Mgr - 3PL Warehouse [Fixed Term]",
@@ -2999,7 +3003,7 @@ function About() {
               "Detects suggested work nature (Management / Specialist / Operational)",
               "Flags ambiguous, low-confidence, or out-of-scope cases",
               "Uses description context when title alone is ambiguous",
-              "Uses AI fallback (Claude Haiku) for unmatched or ambiguous titles",
+              "Uses AI assistance for unmatched or ambiguous titles",
               "AI Assistant — ask questions about your results in plain English",
               "Data Analysis Charts — domain, seniority, skills, and salary breakdowns",
               "PDF Report — 2-page export with summary stats and charts",
@@ -3041,7 +3045,7 @@ function About() {
         <Card style={{ background: C.bg }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>How Classification Works</div>
           <div style={{ fontSize: 13, color: C.textSub, lineHeight: 1.85 }}>
-            Classification follows a four-stage pipeline. <strong>Stage 1</strong> matches title keywords against a logistics domain taxonomy — producing up to 92% confidence when matched. <strong>Stage 2</strong> applies fuzzy repair rules for ambiguous or abbreviated titles — producing 74% (or 30% if outside logistics scope). <strong>Stage 3</strong> uses description text when the title alone is insufficient — producing 58–72% confidence. <strong>Stage 4</strong> calls Claude Haiku AI for titles that pass all three rule stages without a match — capped at 70% confidence. All outputs are <strong>suggested draft classifications</strong> intended for normalization and review support, not final authoritative labels.
+            Classification follows a four-stage pipeline. <strong>Stage 1</strong> matches title keywords against a logistics domain taxonomy — producing up to 92% confidence when matched. <strong>Stage 2</strong> applies fuzzy repair rules for ambiguous or abbreviated titles — producing 74% (or 30% if outside logistics scope). <strong>Stage 3</strong> uses description text when the title alone is insufficient — producing 58–72% confidence. <strong>Stage 4</strong> uses AI assistance for titles that pass all three rule stages without a match — capped at 70% confidence. All outputs are <strong>suggested draft classifications</strong> intended for normalization and review support, not final authoritative labels.
           </div>
         </Card>
 
