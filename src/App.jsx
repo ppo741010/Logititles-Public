@@ -3396,6 +3396,9 @@ function MarketInsights() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            <div style={{ marginTop: 12, fontSize: 11, color: C.textMuted, lineHeight: 1.6, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+              <strong>Note:</strong> Supporting business functions (Sales, Finance, Business Administration) are included where they appear in logistics-related job datasets, as they often support core logistics operations.
+            </div>
           </Card>
 
           {/* Top Skills */}
