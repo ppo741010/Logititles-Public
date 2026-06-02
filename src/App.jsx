@@ -2664,7 +2664,7 @@ const DEMO_RESULTS = DEMO_TITLES.map((raw, i) => ({ id: i + 1, raw, country: "",
 
 function ExportPage({ bulkResults }) {
   const [format, setFormat]   = useState("csv");
-  const [fields, setFields]   = useState(["raw_title","clean_title","domain","work_nature","seniority","confidence","needs_review"]);
+  const [fields, setFields]   = useState(["raw_title","clean_title","domain","work_nature","seniority","confidence","status","out_of_scope","needs_review"]);
   const allFields = EXPORT_FIELDS;
   const toggle = f => setFields(p => p.includes(f) ? p.filter(x => x !== f) : [...p, f]);
 
@@ -2728,7 +2728,10 @@ function ExportPage({ bulkResults }) {
           ))}
         </Card>
         <Card>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>Fields to Include</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Fields to Include</div>
+          <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 14, lineHeight: 1.5 }}>
+            Default: 9 core fields for clean, compact export. Add skills/flags/salary as needed.
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 22 }}>
             {allFields.map(f => (
               <label key={f} style={{ display: "flex", alignItems: "center", gap: 11, cursor: "pointer" }}>
