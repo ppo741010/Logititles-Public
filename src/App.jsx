@@ -3189,6 +3189,45 @@ function AIAssistant({ initialContext = "", onClearContext, bulkResults = [] }) 
     return `Dataset summary: ${bulkResults.length} records total. Out-of-scope (excluded): ${outOfScope}. Low-confidence rows (review recommended): ${lowConf}. Domain breakdown (in-scope only): ${topDomains}. Seniority breakdown: ${topSeniority}. Top skills: ${topSkills}. When answering, always exclude out-of-scope rows and say so. Do not estimate salary for out-of-scope or low-confidence rows.`;
   }
 
+  // Helper: Increment AI usage with detailed logging
+  async function incrementAiUsed() {
+    console.log("🔍 incrementAiUsed called");
+
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+    console.log("incrementAiUsed authUser:", authUser?.id);
+    console.log("incrementAiUsed userError:", userError);
+
+    if (userError || !authUser) {
+      console.warn("⚠️ No logged-in user, cannot update ai_used");
+      return;
+    }
+
+    const { data: currentRows, error: fetchError } = await supabase
+      .from("user_plans")
+      .select("ai_used")
+      .eq("user_id", authUser.id)
+      .single();
+
+    console.log("📊 current ai_used:", currentRows?.ai_used);
+    console.log("📊 fetch error:", fetchError);
+
+    if (fetchError) {
+      console.error("❌ Fetch error (RLS or table issue?):", fetchError.message);
+      return;
+    }
+
+    const nextAiUsed = (currentRows?.ai_used || 0) + 1;
+
+    const { data, error } = await supabase
+      .from("user_plans")
+      .update({ ai_used: nextAiUsed })
+      .eq("user_id", authUser.id)
+      .select();
+
+    console.log("✅ Update result:", data);
+    console.log("❌ Update error (RLS/column issue?):", error);
+  }
+
   async function send(text, ctx = "") {
     alert("🔥 Main AI Send triggered");
     console.warn("🔥 Main AI Send triggered");
@@ -3864,45 +3903,6 @@ export default function App() {
         setUserPlan(data);
       }
     }
-  }
-
-  // Helper: Increment AI usage with detailed logging
-  async function incrementAiUsed() {
-    console.log("🔍 incrementAiUsed called");
-
-    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
-    console.log("incrementAiUsed authUser:", authUser?.id);
-    console.log("incrementAiUsed userError:", userError);
-
-    if (userError || !authUser) {
-      console.warn("⚠️ No logged-in user, cannot update ai_used");
-      return;
-    }
-
-    const { data: currentRows, error: fetchError } = await supabase
-      .from("user_plans")
-      .select("ai_used")
-      .eq("user_id", authUser.id)
-      .single();
-
-    console.log("📊 current ai_used:", currentRows?.ai_used);
-    console.log("📊 fetch error:", fetchError);
-
-    if (fetchError) {
-      console.error("❌ Fetch error (RLS or table issue?):", fetchError.message);
-      return;
-    }
-
-    const nextAiUsed = (currentRows?.ai_used || 0) + 1;
-
-    const { data, error } = await supabase
-      .from("user_plans")
-      .update({ ai_used: nextAiUsed })
-      .eq("user_id", authUser.id)
-      .select();
-
-    console.log("✅ Update result:", data);
-    console.log("❌ Update error (RLS/column issue?):", error);
   }
 
   const planKey = userPlan?.plan ?? (user ? "basic" : "guest");
