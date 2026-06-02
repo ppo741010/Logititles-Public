@@ -1732,10 +1732,12 @@ function BulkAIBubble({ results }) {
 
     // Salary by domain (try multiple field names)
     const salaryByDomain = {};
+    const salaryFieldsFound = new Set();
     inScope.forEach(r => {
       if (r.domain) {
         const salary = r.salary_median || r.salaryMedian || r.salary_range;
         if (salary) {
+          salaryFieldsFound.add(Object.keys(r).find(k => r[k] === salary));
           if (!salaryByDomain[r.domain]) salaryByDomain[r.domain] = [];
           // Extract numeric value if it's a range string
           const numValue = typeof salary === 'string'
@@ -1753,6 +1755,17 @@ function BulkAIBubble({ results }) {
         salaryByDomain[d] = Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
       }
     });
+
+    // DEBUG: Check what salary fields exist
+    if (inScope.length > 0) {
+      const sampleRow = inScope[0];
+      console.log("💰 Salary debug:", {
+        salaryFieldsFound: Array.from(salaryFieldsFound),
+        salaryByDomain: salaryByDomain,
+        sampleRowKeys: Object.keys(sampleRow).filter(k => k.toLowerCase().includes('salary')),
+        sampleRow_allKeys: Object.keys(sampleRow)
+      });
+    }
 
     // Build structured context
     const aiContext = {
