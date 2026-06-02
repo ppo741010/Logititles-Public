@@ -38,3 +38,11 @@ text.txt
 update.txt
 *.bak
 
+# Sensitive data - never commit
+*.csv
+Seek_Job/
+seek_job/
+api/
+!api/feedback.js
+!api/stripe-webhook.js
+
