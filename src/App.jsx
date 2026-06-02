@@ -1836,12 +1836,9 @@ function BulkAIBubble({ results, user, supabase }) {
     setLoading(false);
 
     // Record AI usage (only if successful response)
-    console.log("🔍 DEBUG: Recording check:", { errorMsg, user: user?.id, session: session?.user?.id });
-    if (!errorMsg && (user?.id || session?.user?.id)) {
-      const userId = user?.id || session?.user?.id;
+    if (!errorMsg && session?.user?.id) {
       try {
-        console.log("📝 Attempting to record ai_used for user:", userId);
-        // First, fetch current ai_used to avoid overwriting
+        const userId = session.user.id;
         const { data: planData } = await supabase
           .from('user_plans')
           .select('ai_used')
@@ -1850,17 +1847,15 @@ function BulkAIBubble({ results, user, supabase }) {
 
         const currentAiUsed = planData?.ai_used || 0;
 
-        const result = await supabase
+        await supabase
           .from('user_plans')
           .update({ ai_used: currentAiUsed + 1 })
           .eq('user_id', userId);
 
-        console.log(`✅ Recorded AI Assistant call for user ${userId}. New ai_used: ${currentAiUsed + 1}`);
+        console.log('✅ AI usage recorded');
       } catch (err) {
-        console.error("❌ Failed to record ai_used:", err);
+        console.error('Failed to record:', err.message);
       }
-    } else {
-      console.warn("⚠️ AI usage not recorded:", { errorMsg, hasUser: !!user, hasSession: !!session?.user?.id });
     }
   }
 
