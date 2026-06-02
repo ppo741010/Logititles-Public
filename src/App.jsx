@@ -1642,9 +1642,25 @@ function BulkAIBubble({ results }) {
   }, [messages, loading, open]);
 
   function buildContext() {
+    // Helper functions for consistent type checking
+    const isOutOfScopeRow = (r) =>
+      r.out_of_scope === true ||
+      r.out_of_scope === "Yes" ||
+      r.status === "Out of scope" ||
+      r.domain === "Out of scope";
+
+    const isNeedsReviewRow = (r) =>
+      r.needs_review === true ||
+      r.needs_review === "Yes" ||
+      r.needs_review === "yes" ||
+      r.status === "Review recommended" ||
+      r.status === "Low confidence";
+
     const total = results.length;
-    const inScope = results.filter(r => !isOutOfScope(r));
+    const inScope = results.filter(r => !isOutOfScopeRow(r));
     const outOfScope = total - inScope.length;
+    const outOfScopeRows = results.filter(isOutOfScopeRow);
+    const reviewRows = inScope.filter(isNeedsReviewRow);
 
     // Domain counts
     const domainCounts = {};
@@ -1667,13 +1683,7 @@ function BulkAIBubble({ results }) {
       statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
 
-    // Review required rows (multi-condition)
-    const reviewRows = results.filter(r =>
-      r.needs_review === true ||
-      r.needs_review === "Yes" ||
-      r.status === "Review recommended" ||
-      r.status === "Low confidence"
-    );
+    // Review required rows sample
     const reviewRowsSample = reviewRows.slice(0, 20).map(r => ({
       raw_title: r.raw_title,
       clean_title: r.clean_title,
@@ -1683,13 +1693,7 @@ function BulkAIBubble({ results }) {
       flags: r.flags?.join("; ") || ""
     }));
 
-    // Out-of-scope rows (multi-condition)
-    const outOfScopeRows = results.filter(r =>
-      r.out_of_scope === true ||
-      r.out_of_scope === "Yes" ||
-      r.status === "Out of scope" ||
-      r.domain === "Out of scope"
-    );
+    // Out-of-scope rows sample
     const outOfScopeRowsSample = outOfScopeRows.slice(0, 20).map(r => ({
       raw_title: r.raw_title,
       clean_title: r.clean_title,
@@ -1740,11 +1744,13 @@ function BulkAIBubble({ results }) {
       salary_by_domain: salaryByDomain,
       instructions:
         "Use the provided derived statistics as the source of truth. " +
-        "When asked about rows needing review, use review_required_count and review_rows_sample, not only low-confidence rows. " +
-        "When asked about out-of-scope rows, use out_of_scope_count and out_of_scope_rows_sample. " +
-        "When asked about seniority, use seniority_counts. " +
+        "When asked 'Which rows are out of scope?', answer with out_of_scope_count and list specific titles from out_of_scope_rows_sample. " +
+        "When asked 'Which titles need manual review?' or 'What needs review?', answer with review_required_count and list specific titles from review_rows_sample. " +
+        "Review required includes: needs_review=true/Yes, status='Review recommended' or 'Low confidence', cross-functional signals, description-inferred, ambiguous titles, or flagged rows. " +
+        "When asked about seniority, use seniority_counts and count totals. " +
         "Do not say data is unavailable if it is included in the context. " +
-        "Always specify when excluding out-of-scope rows from domain/skill/seniority analysis."
+        "Always specify when excluding out-of-scope rows from domain/skill/seniority analysis. " +
+        "Provide concrete examples from the sample rows, not generic explanations."
     };
 
     return JSON.stringify(aiContext, null, 2);
