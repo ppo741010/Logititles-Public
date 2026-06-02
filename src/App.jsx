@@ -1753,6 +1753,17 @@ function BulkAIBubble({ results }) {
         "Provide concrete examples from the sample rows, not generic explanations."
     };
 
+    // DEBUG: Log the context to verify it's correct
+    console.log("🔍 AI Context Debug:", {
+      total_rows: aiContext.summary.total_rows,
+      review_required_count: aiContext.summary.review_required_count,
+      out_of_scope_count: aiContext.summary.out_of_scope_count,
+      review_sample_length: aiContext.samples.review_rows_sample.length,
+      out_of_scope_sample_length: aiContext.samples.out_of_scope_rows_sample.length,
+      review_sample_titles: aiContext.samples.review_rows_sample.slice(0, 5).map(r => r.clean_title),
+      out_of_scope_sample_titles: aiContext.samples.out_of_scope_rows_sample.slice(0, 5).map(r => r.clean_title)
+    });
+
     return JSON.stringify(aiContext, null, 2);
   }
 
