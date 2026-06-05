@@ -1565,7 +1565,9 @@ function ResultCharts({ results, fileName = "" }) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
     .map(([name, value]) => ({
-      name: name.replace(/\b\w/g, c => c.toUpperCase()), // Title Case for display
+      name: name
+        .replace(/\b\w/g, c => c.toUpperCase())
+        .replace(/\b(Tms|Wms|Erp|Sap|Edi|Crm|Kpi|S&op|It|Hr|Po|3pl)\b/g, s => s.toUpperCase()),
       value,
     }));
 
