@@ -2339,11 +2339,19 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
         )}
 
         {/* Fallback warning */}
-        {phase === "done" && results[0]?.source === "local" && (
-          <div style={{ background: C.amberLight, border: `1px solid ${C.amberBorder}`, borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "#78350f" }}>
-            ⚠ API unavailable — all results from local classifier. Accuracy may differ from the Python engine.
-          </div>
-        )}
+        {phase === "done" && (() => {
+          const localCount = results.filter(r => r.source === "local").length;
+          if (localCount === 0) return null;
+          const allLocal = localCount === results.length;
+          return (
+            <div style={{ background: C.amberLight, border: `1px solid ${C.amberBorder}`, borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "#78350f" }}>
+              ⚠ {allLocal
+                ? `All ${localCount} rows were classified locally due to API unavailability.`
+                : `${localCount} of ${results.length} rows were classified locally due to API fallback.`
+              } Local results may be less accurate than AI-classified rows — consider reviewing flagged items carefully.
+            </div>
+          );
+        })()}
 
         {/* Summary cards — shown when done */}
         {phase === "done" && (
@@ -2482,13 +2490,20 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
                           {row.confidence}%
                         </td>
                         <td style={{ padding: "10px 16px" }}>
-                          {isOOS
-                            ? <span style={{ fontSize: 11, fontWeight: 700, color: C.red }}>✗ Out of scope</span>
-                            : row.confidence < 55
-                            ? <span style={{ fontSize: 11, fontWeight: 600, color: C.red }}>⚠ Low confidence</span>
-                            : needsRev
-                            ? <span style={{ fontSize: 11, fontWeight: 600, color: C.amber }}>⚑ Review recommended</span>
-                            : <span style={{ fontSize: 11, color: C.green }}>✓ Good match</span>}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                            {isOOS
+                              ? <span style={{ fontSize: 11, fontWeight: 700, color: C.red }}>✗ Out of scope</span>
+                              : row.confidence < 55
+                              ? <span style={{ fontSize: 11, fontWeight: 600, color: C.red }}>⚠ Low confidence</span>
+                              : needsRev
+                              ? <span style={{ fontSize: 11, fontWeight: 600, color: C.amber }}>⚑ Review recommended</span>
+                              : <span style={{ fontSize: 11, color: C.green }}>✓ Good match</span>}
+                            {row.source === "local" && (
+                              <span style={{ fontSize: 10, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 4, padding: "1px 5px", width: "fit-content" }}>
+                                local classifier
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </>}
                     </tr>
