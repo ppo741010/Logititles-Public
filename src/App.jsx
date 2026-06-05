@@ -2064,25 +2064,13 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     onResultsReady && onResultsReady(allResults);
     setPhase("done");
 
-    // Record bulk usage
+    // Record bulk usage atomically
     if (user) {
-      const rowsProcessed = allResults.length;
       try {
-        // Fetch current bulk_used to avoid overwriting
-        const { data: planData } = await supabase
-          .from('user_plans')
-          .select('bulk_used')
-          .eq('user_id', user.id)
-          .single();
-
-        const currentBulkUsed = planData?.bulk_used || 0;
-
-        await supabase
-          .from('user_plans')
-          .update({ bulk_used: currentBulkUsed + rowsProcessed })
-          .eq('user_id', user.id);
-
-        console.log(`✅ Recorded ${rowsProcessed} rows for user ${user.id}. New bulk_used: ${currentBulkUsed + rowsProcessed}`);
+        await supabase.rpc("increment_bulk_usage", {
+          p_user_id: user.id,
+          p_rows: allResults.length,
+        });
       } catch (err) {
         console.error("Failed to record bulk_used:", err);
       }
