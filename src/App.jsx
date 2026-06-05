@@ -2301,11 +2301,14 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
               <button onClick={reset} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, fontSize: 13, cursor: "pointer", color: C.textMuted, fontFamily: "inherit" }}>
                 Remove
               </button>
-              {phase === "ready" && (
+              {phase === "ready" && (<>
+                <button onClick={() => setPhase("mapping")} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, fontSize: 13, cursor: "pointer", color: C.textSub, fontFamily: "inherit" }}>
+                  Edit mapping
+                </button>
                 <button onClick={previewCleaning} style={{ padding: "8px 22px", borderRadius: 8, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
                   Preview Cleaning →
                 </button>
-              )}
+              </>)}
               {phase === "previewing_loading" && (
                 <div style={{ padding: "8px 22px", borderRadius: 8, background: C.accentLight, color: C.accent, fontWeight: 600, fontSize: 13 }}>Loading preview…</div>
               )}
@@ -2324,6 +2327,16 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
             </div>
           </div>
         </Card>
+
+        {/* Detected columns summary */}
+        {phase === "ready" && (
+          <div style={{ padding: "10px 16px", background: C.accentLight, border: `1px solid ${C.accentBorder}`, borderRadius: 8, fontSize: 12, color: "#1e40af", display: "flex", gap: 20, flexWrap: "wrap" }}>
+            <span style={{ fontWeight: 700 }}>Detected columns:</span>
+            <span>Title: <code style={{ background: "#dbeafe", padding: "1px 6px", borderRadius: 4 }}>{colMap.rawTitle || "—"}</code></span>
+            <span>Description: <code style={{ background: "#dbeafe", padding: "1px 6px", borderRadius: 4 }}>{colMap.description || "not mapped"}</code></span>
+            <span>Country: <code style={{ background: "#dbeafe", padding: "1px 6px", borderRadius: 4 }}>{colMap.country || "not mapped"}</code></span>
+          </div>
+        )}
 
         {/* Progress bar */}
         {phase === "processing" && (
