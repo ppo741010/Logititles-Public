@@ -2031,12 +2031,16 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     const allResults = [];
     let useLocal = false;
 
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token ?? "";
+
     try {
       for (let i = 0; i < rows.length; i += BATCH) {
         const batch = rows.slice(i, i + BATCH);
         if (!useLocal) {
           const apiResults = await bulkAnalyzeViaAPI(
-            batch.map(r => ({ title: r.title, description: r.description, country: r.country }))
+            batch.map(r => ({ title: r.title, description: r.description, country: r.country })),
+            token
           );
           if (apiResults) {
             allResults.push(...batch.map((r, j) => ({ id: r.id, raw: r.raw, country: r.country, ...apiResults[j] })));

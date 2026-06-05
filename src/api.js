@@ -42,11 +42,13 @@ export async function analyzeViaAPI(title, description = "", country = "") {
  * Bulk analyze via API.
  * Returns null on failure.
  */
-export async function bulkAnalyzeViaAPI(rows) {
+export async function bulkAnalyzeViaAPI(rows, token = "") {
   try {
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     const res = await fetch(`${API_BASE}/bulk-analyze`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ rows }),
     });
     if (!res.ok) return null;

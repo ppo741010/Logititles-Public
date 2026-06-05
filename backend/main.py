@@ -112,11 +112,32 @@ def analyze_single(request: Request, req: AnalyzeRequest, background_tasks: Back
     return result
 
 
+PLAN_LIMITS = {"guest": 100, "basic": 1_000, "pro": 10_000}
+
 @app.post("/bulk-analyze")
 @limiter.limit("10/minute")
 def bulk_analyze(request: Request, req: BulkAnalyzeRequest, background_tasks: BackgroundTasks):
-    if len(req.rows) > 10_000:
-        raise HTTPException(status_code=400, detail="Maximum 10,000 rows per request.")
+    # Determine plan limit from token
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer ") and supabase:
+        token = auth_header.split(" ", 1)[1]
+        try:
+            user_resp = supabase.auth.get_user(token)
+            user_id = user_resp.user.id
+            plan_resp = supabase.table("user_plans").select("plan").eq("user_id", user_id).single().execute()
+            plan = plan_resp.data.get("plan", "basic") if plan_resp.data else "basic"
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid or expired session. Please sign in again.")
+    else:
+        plan = "guest"
+
+    limit = PLAN_LIMITS.get(plan, PLAN_LIMITS["guest"])
+    if len(req.rows) > limit:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Your {plan} plan supports up to {limit} rows per upload. This request has {len(req.rows)} rows."
+        )
+
     results = [analyze(r.title, r.description, r.country) for r in req.rows]
     background_tasks.add_task(_log_titles, results)
     return results
