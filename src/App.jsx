@@ -1346,12 +1346,12 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin,
 
 // ── Page 2: Bulk Upload ─────────────────────────────────────────────────────
 
+const MIN_SALARY_SAMPLE_SIZE = 20;
+
 const DOMAIN_PALETTE = [
   "#3b6ef5","#16a34a","#d97706","#dc2626","#7c3aed",
   "#0891b2","#db2777","#65a30d","#ea580c","#6b7280",
 ];
-
-const MIN_SALARY_SAMPLE_SIZE = 20;
 
 function ResultCharts({ results, fileName = "" }) {
   const chartRef = useRef(null);
@@ -3629,7 +3629,7 @@ function MarketInsights() {
         const avg    = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length / 1000) * 1000;
         return { name: domain, median, avg, count: vals.length };
       })
-      .filter(d => d.count >= 20)
+      .filter(d => d.count >= MIN_SALARY_SAMPLE_SIZE)
       .sort((a, b) => b.median - a.median);
   }
 
@@ -3657,7 +3657,7 @@ function MarketInsights() {
       buckets[label].push(r.salary_yearly);
     });
     return LEVEL_ORDER
-      .filter(l => buckets[l] && buckets[l].length >= 20)
+      .filter(l => buckets[l] && buckets[l].length >= MIN_SALARY_SAMPLE_SIZE)
       .map(l => ({
         name: l,
         avg:    Math.round(buckets[l].reduce((a, b) => a + b, 0) / buckets[l].length / 1000) * 1000,
@@ -3824,7 +3824,7 @@ function MarketInsights() {
                 Median Salary by Domain ({country === "AU" ? "AUD" : "NZD"}/yr)
               </div>
               <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 14 }}>
-                Median advertised salary — roles with salary data only (n ≥ 20 per domain). Market estimates, not authoritative benchmarks.
+                Median advertised salary — roles with salary data only (n ≥ {MIN_SALARY_SAMPLE_SIZE} per domain). Market estimates, not authoritative benchmarks.
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={salaryData} margin={{ left: 10, right: 20 }}>
@@ -3857,7 +3857,7 @@ function MarketInsights() {
                 Median Salary by Seniority ({country === "AU" ? "AUD" : "NZD"}/yr)
               </div>
               <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 14 }}>
-                Median advertised salary by level (n ≥ 20). Mixed domains — IT roles may skew Senior upward.
+                Median advertised salary by level (n ≥ {MIN_SALARY_SAMPLE_SIZE}). Mixed domains — IT roles may skew Senior upward.
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={salaryLvlData} margin={{ left: 10, right: 20 }}>
