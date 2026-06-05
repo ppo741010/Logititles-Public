@@ -1533,6 +1533,7 @@ function ResultCharts({ results }) {
     .filter(([, medians]) => medians.length >= 10)
     .map(([domain, medians]) => ({
       name: domain,
+      label: `${domain} · n=${medians.length}`,
       median: Math.round(medians.reduce((a, b) => a + b, 0) / medians.length),
       count: medians.length,
     }))
@@ -1616,8 +1617,8 @@ function ResultCharts({ results }) {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={salaryData} layout="vertical" margin={{ left: 8, right: 16, top: 0, bottom: 0 }}>
                 <XAxis type="number" tick={{ fontSize: 11, fill: C.textMuted }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: C.text }} axisLine={false} tickLine={false} width={130} />
-                <Tooltip formatter={(v, _, props) => [`NZD $${v.toLocaleString()} · n=${props.payload?.count}`, "Est. Median"]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${C.border}` }} />
+                <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: C.text }} axisLine={false} tickLine={false} width={170} />
+                <Tooltip formatter={(v, _, props) => [`NZD $${v.toLocaleString()}`, `Est. Median · n=${props.payload?.count}`]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${C.border}` }} />
                 <Bar dataKey="median" radius={[0, 4, 4, 0]} fill="#16a34a" />
               </BarChart>
             </ResponsiveContainer>
