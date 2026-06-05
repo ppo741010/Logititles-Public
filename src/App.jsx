@@ -2107,15 +2107,26 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     }
   }
 
+  const PREVIEW_LIMIT = 50;
+
   async function previewCleaning() {
     if (!colMap.rawTitle) return;
     setPhase("previewing_loading");
-    const titles = parsedRows.map(r => (r[colMap.rawTitle] || "").trim()).filter(Boolean);
-    const apiResult = await cleanPreviewViaAPI(titles);
-    const pairs = apiResult
+    const allTitles = parsedRows.map(r => (r[colMap.rawTitle] || "").trim());
+    const previewTitles = allTitles.slice(0, PREVIEW_LIMIT).filter(Boolean);
+    const apiResult = await cleanPreviewViaAPI(previewTitles);
+
+    const previewPairs = apiResult
       ? apiResult.map(p => ({ raw: p.raw, clean: p.clean, original: p.clean }))
-      : titles.map(t => { const c = cleanTitle(t); return { raw: t, clean: c, original: c }; });
-    setCleanPreviews(pairs);
+      : previewTitles.map(t => { const c = cleanTitle(t); return { raw: t, clean: c, original: c }; });
+
+    // Remaining rows beyond PREVIEW_LIMIT use local cleanTitle as placeholder
+    const remainingPairs = allTitles.slice(PREVIEW_LIMIT).map(t => {
+      const c = cleanTitle(t);
+      return { raw: t, clean: c, original: c };
+    });
+
+    setCleanPreviews([...previewPairs, ...remainingPairs]);
     setPhase("previewing");
   }
 
@@ -2431,6 +2442,13 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
                 Upgrade to Pro →
               </a>
             </div>
+          </div>
+        )}
+
+        {/* Preview scope notice */}
+        {phase === "previewing" && parsedRows.length > PREVIEW_LIMIT && (
+          <div style={{ padding: "10px 16px", background: C.accentLight, border: `1px solid ${C.accentBorder}`, borderRadius: 8, fontSize: 12, color: "#1e40af" }}>
+            ℹ Showing AI-cleaned preview for the first <strong>{PREVIEW_LIMIT} rows</strong>. Remaining {parsedRows.length - PREVIEW_LIMIT} rows will be cleaned automatically when you run the classifier.
           </div>
         )}
 
