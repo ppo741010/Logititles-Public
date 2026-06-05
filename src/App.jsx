@@ -1950,6 +1950,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
   const [sheetNames, setSheetNames]     = useState([]);
   const [xlsxBuffer, setXlsxBuffer]     = useState(null);
   const fileInputRef                    = useRef(null);
+  const cancelledRef                    = useRef(false);
 
   // Summary stats
   const total          = results.length;
@@ -2019,8 +2020,13 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     }
   }
 
+  function cancelProcessing() {
+    cancelledRef.current = true;
+  }
+
   async function processRows() {
     if (!colMap.rawTitle) return;
+    cancelledRef.current = false;
     setPhase("processing");
     setProgress(0);
 
@@ -2043,6 +2049,10 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
 
     try {
       for (let i = 0; i < rows.length; i += BATCH) {
+        if (cancelledRef.current) {
+          setPhase("idle");
+          return;
+        }
         const batch = rows.slice(i, i + BATCH);
         if (!useLocal) {
           const apiResults = await bulkAnalyzeViaAPI(
@@ -2350,7 +2360,12 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
           <Card style={{ padding: "16px 20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Classifying titles…</div>
-              <div style={{ fontSize: 12, color: C.textMuted }}>{Math.min(progress, parsedRows.length)} / {parsedRows.length}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ fontSize: 12, color: C.textMuted }}>{Math.min(progress, parsedRows.length)} / {parsedRows.length}</div>
+                <button onClick={cancelProcessing} style={{ padding: "4px 12px", borderRadius: 6, border: `1px solid ${C.redBorder}`, background: C.redLight, color: C.red, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  Cancel
+                </button>
+              </div>
             </div>
             <div style={{ background: C.border, borderRadius: 99, height: 6, overflow: "hidden" }}>
               <div style={{ background: C.accent, height: "100%", borderRadius: 99, width: `${parsedRows.length ? Math.round((Math.min(progress, parsedRows.length) / parsedRows.length) * 100) : 0}%`, transition: "width 0.3s ease" }} />
