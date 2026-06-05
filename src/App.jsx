@@ -1504,11 +1504,21 @@ function ResultCharts({ results }) {
 
   const noiseCount = results.filter(r => isOutOfScope(r)).length;
 
+  function normalizeSkill(s) {
+    return s.trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
   results.forEach(r => {
     if (isOutOfScope(r)) return; // exclude out-of-scope from all charts
     if (r.domain) domainCounts[r.domain] = (domainCounts[r.domain] || 0) + 1;
     if (r.seniority) seniorityCounts[r.seniority] = (seniorityCounts[r.seniority] || 0) + 1;
-    (r.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; });
+    const seen = new Set();
+    (r.skills || []).forEach(s => {
+      const norm = normalizeSkill(s);
+      if (!norm || seen.has(norm)) return;
+      seen.add(norm);
+      skillCounts[norm] = (skillCounts[norm] || 0) + 1;
+    });
     if (r.salaryBenchmark?.median && r.domain) {
       if (!domainSalary[r.domain]) domainSalary[r.domain] = [];
       domainSalary[r.domain].push(r.salaryBenchmark.median);
@@ -1527,7 +1537,10 @@ function ResultCharts({ results }) {
   const topSkillsData = Object.entries(skillCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
-    .map(([name, value]) => ({ name, value }));
+    .map(([name, value]) => ({
+      name: name.replace(/\b\w/g, c => c.toUpperCase()), // Title Case for display
+      value,
+    }));
 
   const salaryData = Object.entries(domainSalary)
     .filter(([, medians]) => medians.length >= 10)
