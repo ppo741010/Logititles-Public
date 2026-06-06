@@ -711,27 +711,27 @@ function parseCSVLine(line) {
   return fields;
 }
 
-function parseCSVText(text) {
+function parseCSVText(text, headerRowIndex = 0) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) throw new Error("File appears to be empty or has no data rows.");
-  const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, "").trim());
-  const rows = lines.slice(1).map(line => {
+  const headers = parseCSVLine(lines[headerRowIndex]).map(h => h.replace(/^"|"$/g, "").trim());
+  const rows = lines.slice(headerRowIndex + 1).map(line => {
     const vals = parseCSVLine(line);
     const row = {};
     headers.forEach((h, i) => { row[h] = (vals[i] || "").replace(/^"|"$/g, "").trim(); });
     return row;
   }).filter(row => headers.some(h => row[h]));
-  return { headers, rows };
+  return { headers, rows, skippedRows: headerRowIndex };
 }
 
-function parseXLSX(buffer, sheetName = null) {
+function parseXLSX(buffer, sheetName = null, headerRowIndex = 0) {
   const wb = XLSX.read(buffer, { type: "array" });
   const name = sheetName || wb.SheetNames[0];
   const ws = wb.Sheets[name];
   const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   if (!data.length) throw new Error("File appears to be empty.");
-  const headers = data[0].map(h => String(h).trim()).filter(h => h);
-  const rows = data.slice(1)
+  const headers = data[headerRowIndex].map(h => String(h).trim()).filter(h => h);
+  const rows = data.slice(headerRowIndex + 1)
     .filter(row => row.some(v => String(v).trim()))
     .map(row => {
       const obj = {};
@@ -739,7 +739,49 @@ function parseXLSX(buffer, sheetName = null) {
       return obj;
     });
   if (!rows.length) throw new Error("File has headers but no data rows.");
-  return { headers, rows };
+  return { headers, rows, skippedRows: headerRowIndex };
+}
+
+// ── Header detection helpers ─────────────────────────────────────────────────
+
+const HEADER_DETECT_KEYWORDS = ["title", "job title", "position", "role", "description", "country", "location", "job", "salary", "department", "seniority", "level"];
+
+function scoreRowAsHeader(cells) {
+  const lower = cells.map(c => String(c).toLowerCase().trim());
+  // Count how many individual cells match a header keyword (short label, ≤ 4 words)
+  const matchingCells = lower.filter(c =>
+    c.split(/\s+/).length <= 4 && HEADER_DETECT_KEYWORDS.some(kw => c === kw || c.includes(kw))
+  );
+  // A real header row has multiple cells that look like column labels
+  // Single-cell rows (e.g. report title) cannot qualify even if they contain a keyword substring
+  let score = matchingCells.length;
+  const hasLongText = cells.some(c => String(c).trim().split(/\s+/).length > 8);
+  const hasNumeric  = cells.some(c => /^\d{3,}$/.test(String(c).trim()));
+  if (hasLongText || hasNumeric) score -= 2;
+  return score;
+}
+
+function detectHeaderRow(rawRows) {
+  const scanLimit = Math.min(rawRows.length, 10);
+  // Row 0 must have ≥ 2 keyword-matching cells AND multiple columns to be a valid header
+  const row0 = rawRows[0] || [];
+  const row0Score = scoreRowAsHeader(row0);
+  if (row0Score >= 2 && row0.length >= 2) return null;
+
+  let bestIdx = -1, bestScore = 0;
+  for (let i = 1; i < scanLimit; i++) {
+    const row = rawRows[i];
+    const s = scoreRowAsHeader(row);
+    // Candidate header must have ≥ 2 matching cells and multiple columns
+    if (s > bestScore && row.length >= 2) { bestScore = s; bestIdx = i; }
+  }
+  if (bestIdx >= 1 && bestScore >= 2) return { headerRowIndex: bestIdx };
+  return null;
+}
+
+function getRawRowsCSV(text) {
+  return text.split(/\r?\n/).filter(l => l.trim()).slice(0, 10)
+    .map(l => parseCSVLine(l).map(c => c.replace(/^"|"$/g, "").trim()));
 }
 
 // ── Column auto-detection ────────────────────────────────────────────────────
@@ -1998,7 +2040,7 @@ function BulkAIBubble({ results, user, supabase }) {
 }
 
 function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, onLogin, planKey = "guest" }) {
-  const [phase, setPhase]               = useState("idle"); // idle | error | sheet-select | mapping | ready | previewing | processing | done
+  const [phase, setPhase]               = useState("idle"); // idle | error | parsing | sheet-select | header-warning | mapping | ready | previewing | previewing_loading | processing | done
   const [statusFilter, setStatusFilter] = useState("all");
   const [error, setError]               = useState(null);
   const [fileName, setFileName]         = useState("");
@@ -2011,6 +2053,8 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
   const [dragOver, setDragOver]         = useState(false);
   const [sheetNames, setSheetNames]     = useState([]);
   const [xlsxBuffer, setXlsxBuffer]     = useState(null);
+  const [headerWarning, setHeaderWarning] = useState(null); // { headerRowIndex, source: "csv"|"xlsx", csvText?, xlsxBuffer?, sheetName? }
+  const [skippedRows, setSkippedRows]   = useState(0);
   const fileInputRef                    = useRef(null);
   const cancelledRef                    = useRef(false);
 
@@ -2031,8 +2075,15 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     try {
       if (ext === "csv") {
         const text = await file.text();
-        const parsed = parseCSVText(text);
-        applyParsed(parsed);
+        const rawRows = getRawRowsCSV(text);
+        const detection = detectHeaderRow(rawRows);
+
+        if (detection) {
+          setHeaderWarning({ headerRowIndex: detection.headerRowIndex, source: "csv", csvText: text });
+          setPhase("header-warning");
+        } else {
+          applyParsed(parseCSVText(text));
+        }
       } else {
         const buffer = await file.arrayBuffer();
         const wb = XLSX.read(buffer, { type: "array" });
@@ -2041,7 +2092,16 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
           setSheetNames(wb.SheetNames);
           setPhase("sheet-select");
         } else {
-          applyParsed(parseXLSX(buffer));
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+          const rawRows = data.slice(0, 10).map(r => r.map(c => String(c).trim()));
+          const detection = detectHeaderRow(rawRows);
+          if (detection) {
+            setHeaderWarning({ headerRowIndex: detection.headerRowIndex, source: "xlsx", xlsxBuffer: buffer, sheetName: wb.SheetNames[0] });
+            setPhase("header-warning");
+          } else {
+            applyParsed(parseXLSX(buffer));
+          }
         }
       }
     } catch (err) {
@@ -2051,8 +2111,9 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
   }
 
   function applyParsed(parsed) {
-    const { headers: hdrs, rows } = parsed;
+    const { headers: hdrs, rows, skippedRows: skipped = 0 } = parsed;
     if (!rows.length) throw new Error("The file has no data rows.");
+    setSkippedRows(skipped);
 
     // Check row limit — block if exceeded
     if (rows.length > limits.bulk) {
@@ -2075,9 +2136,34 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
 
   function selectSheet(name) {
     try {
-      applyParsed(parseXLSX(xlsxBuffer, name));
+      const wb = XLSX.read(xlsxBuffer, { type: "array" });
+      const ws = wb.Sheets[name];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+      const rawRows = data.slice(0, 10).map(r => r.map(c => String(c).trim()));
+      const detection = detectHeaderRow(rawRows);
+      if (detection) {
+        setHeaderWarning({ headerRowIndex: detection.headerRowIndex, source: "xlsx", xlsxBuffer, sheetName: name });
+        setPhase("header-warning");
+      } else {
+        applyParsed(parseXLSX(xlsxBuffer, name));
+      }
     } catch (err) {
       setError(err.message || "Could not parse this sheet.");
+      setPhase("error");
+    }
+  }
+
+  function confirmHeaderRow(rowIndex) {
+    const hw = headerWarning;
+    setHeaderWarning(null);
+    try {
+      if (hw.source === "csv") {
+        applyParsed(parseCSVText(hw.csvText, rowIndex));
+      } else {
+        applyParsed(parseXLSX(hw.xlsxBuffer, hw.sheetName, rowIndex));
+      }
+    } catch (err) {
+      setError(err.message || "Could not parse the file with the selected header row.");
       setPhase("error");
     }
   }
@@ -2190,7 +2276,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
   function reset() {
     setPhase("idle"); setError(null); setFileName(""); setParsedRows([]); setHeaders([]);
     setColMap({ rawTitle: "", description: "", country: "" }); setCleanPreviews([]); setResults([]);
-    setSheetNames([]); setXlsxBuffer(null); setProgress(0);
+    setSheetNames([]); setXlsxBuffer(null); setProgress(0); setHeaderWarning(null); setSkippedRows(0);
   }
 
   const onDrop = e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); };
@@ -2283,6 +2369,43 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     </div>
   );
 
+  // ── Render: Header Warning ──
+  if (phase === "header-warning" && headerWarning) {
+    const detectedRow = headerWarning.headerRowIndex + 1; // 1-based for display
+    return (
+      <div>
+        <SectionTitle children="Bulk Upload" />
+        <Card style={{ border: "1.5px solid #f59e0b", background: "#fffbeb" }}>
+          <div style={{ fontWeight: 700, color: "#92400e", fontSize: 15, marginBottom: 10 }}>⚠ Possible metadata rows detected</div>
+          <div style={{ fontSize: 13, color: "#78350f", lineHeight: 1.7, marginBottom: 6 }}>
+            Row 1 does not look like a column header. <strong>Row {detectedRow}</strong> appears to contain the actual column headers.
+          </div>
+          <div style={{ fontSize: 13, color: "#78350f", marginBottom: 20 }}>
+            If your file has {headerWarning.headerRowIndex} metadata row{headerWarning.headerRowIndex !== 1 ? "s" : ""} above the header (e.g. a report title or file name), using Row {detectedRow} as the header will give more accurate results.
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              onClick={() => confirmHeaderRow(headerWarning.headerRowIndex)}
+              style={{ padding: "10px 22px", borderRadius: 8, border: "none", background: "#d97706", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              Use Row {detectedRow} as Header
+            </button>
+            <button
+              onClick={() => confirmHeaderRow(0)}
+              style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #fcd34d", background: "#fef3c7", color: "#92400e", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              Continue Anyway (Use Row 1)
+            </button>
+            <button
+              onClick={reset}
+              style={{ padding: "10px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.textMuted, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              ← Upload Different File
+            </button>
+          </div>
+          <div style={{ marginTop: 14, fontSize: 12, color: "#a16207" }}>{fileName}</div>
+        </Card>
+      </div>
+    );
+  }
+
   // ── Render: Sheet Select ──
   if (phase === "sheet-select") return (
     <div>
@@ -2326,9 +2449,14 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     <div>
       <SectionTitle children="Bulk Upload" sub="We couldn't auto-detect your column names. Please map them below." />
       <Card>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 18 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: skippedRows > 0 ? 8 : 18 }}>
           📄 {fileName} · {parsedRows.length} rows detected
         </div>
+        {skippedRows > 0 && (
+          <div style={{ fontSize: 12, color: "#d97706", marginBottom: 18, padding: "7px 12px", background: "#fffbeb", borderRadius: 6, border: "1px solid #fcd34d" }}>
+            {skippedRows} metadata row{skippedRows !== 1 ? "s" : ""} skipped · header detected at row {skippedRows + 1}
+          </div>
+        )}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
           {[
             { key: "rawTitle", label: "Raw Title", required: true, note: "The messy job title column" },
@@ -2383,7 +2511,10 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
               <div>
                 <div style={{ fontWeight: 600, color: C.text }}>{fileName}</div>
                 <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>
-                  {parsedRows.length} rows · {phase === "done" ? `${total - structured} row${total - structured !== 1 ? "s" : ""} flagged for review` : "Ready to process"}
+                  {parsedRows.length} data rows
+                  {skippedRows > 0 && <span style={{ color: "#d97706", marginLeft: 6 }}>· {skippedRows} metadata row{skippedRows !== 1 ? "s" : ""} skipped · header: row {skippedRows + 1}</span>}
+                  {phase === "done" && <span> · {total - structured} row{total - structured !== 1 ? "s" : ""} flagged for review</span>}
+                  {phase !== "done" && skippedRows === 0 && <span> · Ready to process</span>}
                 </div>
               </div>
             </div>
