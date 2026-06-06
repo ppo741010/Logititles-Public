@@ -1401,9 +1401,10 @@ function ResultCharts({ results, fileName = "" }) {
     });
     const topDomains = Object.entries(domainCounts).sort((a,b) => b[1]-a[1]).slice(0,3).map(([d,c]) => `${d} (${c})`);
     const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0,5).map(([s]) => s);
-    const topSalaryDomain = Object.entries(domainSalary)
-      .map(([d, vals]) => [d, Math.round(vals.reduce((a,b) => a+b,0)/vals.length)])
-      .sort((a,b) => b[1]-a[1])[0];
+    const topSalaryDomain = Object.values(domainSalary)
+      .filter(({ medians }) => medians.length >= MIN_SALARY_SAMPLE_SIZE)
+      .map(({ domain, currency, medians }) => ({ domain, currency, median: Math.round(medians.reduce((a,b) => a+b,0)/medians.length) }))
+      .sort((a,b) => b.median - a.median)[0] ?? null;
 
     // Header bar
     pdf.setFillColor(59, 110, 245);
@@ -1454,7 +1455,7 @@ function ResultCharts({ results, fileName = "" }) {
     const insights = [
       `Top logistics domains: ${topDomains.length > 0 ? topDomains.join(", ") : "N/A"}`,
       `Most common skills: ${topSkills.length > 0 ? topSkills.join(", ") : "N/A"}`,
-      topSalaryDomain ? `Highest est. median salary: ${topSalaryDomain[0]} — NZD $${topSalaryDomain[1].toLocaleString()} (indicative)` : null,
+      topSalaryDomain ? `Highest est. median salary: ${topSalaryDomain.domain} (${topSalaryDomain.currency}) — ${topSalaryDomain.currency} $${topSalaryDomain.median.toLocaleString()} (indicative)` : null,
       `Classification rate: ${total > 0 ? Math.round((structured / total) * 100) : 0}% structured successfully`,
       outOfScope > 0 ? `Out-of-scope rows excluded: ${outOfScope}` : null,
     ].filter(Boolean);
