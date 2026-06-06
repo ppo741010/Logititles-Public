@@ -2142,7 +2142,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     if (!colMap.rawTitle) return;
     setPhase("previewing_loading");
     const allTitles = parsedRows.map(r => (r[colMap.rawTitle] || "").trim());
-    const previewTitles = allTitles.slice(0, PREVIEW_LIMIT).filter(Boolean);
+    const previewTitles = allTitles.slice(0, PREVIEW_LIMIT);
     const apiResult = await cleanPreviewViaAPI(previewTitles);
 
     const previewPairs = apiResult
