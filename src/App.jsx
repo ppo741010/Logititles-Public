@@ -1655,9 +1655,9 @@ function ResultCharts({ results, fileName = "" }) {
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Top Skills in Dataset</div>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={topSkillsData} layout="vertical" margin={{ left: 8, right: 16, top: 0, bottom: 0 }}>
+              <BarChart data={topSkillsData} layout="vertical" margin={{ left: 10, right: 16, top: 0, bottom: 0 }}>
                 <XAxis type="number" tick={{ fontSize: 11, fill: C.textMuted }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: C.text }} axisLine={false} tickLine={false} width={150} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: C.text }} axisLine={false} tickLine={false} width={200} />
                 <Tooltip formatter={(v) => [v, "Count"]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${C.border}` }} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]} fill={C.accent} />
               </BarChart>
@@ -3777,7 +3777,7 @@ function MarketInsights() {
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={skillData} layout="vertical" margin={{ left: 10, right: 40 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={130} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={180} />
                 <Tooltip formatter={v => [v, "Mentions"]} />
                 <Bar dataKey="value" fill={C.accent} radius={[0,4,4,0]}>
                   <LabelList dataKey="value" position="right" style={{ fontSize: 10, fill: "#6b7280" }} />
