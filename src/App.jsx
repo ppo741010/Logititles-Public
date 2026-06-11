@@ -4,6 +4,7 @@ import { analyzeViaAPI, bulkAnalyzeViaAPI, cleanPreviewViaAPI, chatViaAPI, start
 startKeepAlive();
 import skillConfig from "./skill_normalize.json";
 import { supabase } from "./supabase.js";
+import { trackEvent } from "./utils/analytics.js";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LabelList } from "recharts";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -128,6 +129,7 @@ function FeedbackForm({ page = "", testInput = "", metadata = {} }) {
       if (!error) {
         setStatus("success");
         console.log("✅ Feedback saved");
+        trackEvent("feedback_submit", { page, rating });
         setTimeout(() => {
           setShowFeedback(false);
           setRating("");
@@ -417,6 +419,7 @@ function AIProWall({ onLogin, isLoggedIn }) {
           ))}
         </div>
         <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
+          onClick={() => trackEvent("upgrade_click", { current_plan: "guest", target_plan: "pro", location: "landing_banner" })}
           style={{ padding: "11px 32px", borderRadius: 9, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none", display: "inline-block" }}>
           Upgrade to Pro →
         </a>
@@ -1190,8 +1193,15 @@ function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin,
     }
     setLoading(true); setResult(null);
     const apiResult = await analyzeViaAPI(title, desc, country);
-    setResult(apiResult ?? { ...analyze(title, desc, country), source: "local" });
+    const resolved = apiResult ?? { ...analyze(title, desc, country), source: "local" };
+    setResult(resolved);
     setLoading(false);
+    trackEvent("single_analyzer_success", {
+      plan: userPlan?.plan || "guest",
+      status: resolved?.out_of_scope ? "out_of_scope" : (resolved?.needsReview ? "review_required" : "good_match"),
+      out_of_scope: Boolean(resolved?.out_of_scope),
+      needs_review: Boolean(resolved?.needsReview),
+    });
   }
 
   return (
@@ -1949,6 +1959,10 @@ function BulkAIBubble({ results, user, supabase }) {
     // Record AI usage (only if successful response)
     if (!errorMsg) {
       await incrementAiUsed();
+      trackEvent("ai_question_success", {
+        plan: userPlan?.plan || "guest",
+        has_uploaded_data: Boolean(results?.length),
+      });
     }
   }
 
@@ -2228,6 +2242,13 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
     setResults(allResults);
     onResultsReady && onResultsReady(allResults);
     setPhase("done");
+    trackEvent("bulk_upload_success", {
+      plan: planKey || "guest",
+      total_rows: allResults.length,
+      structured_count: allResults.filter(r => !r.needsReview && !isOutOfScope(r)).length,
+      review_required_count: allResults.filter(r => r.needsReview && !isOutOfScope(r)).length,
+      out_of_scope_count: allResults.filter(r => isOutOfScope(r)).length,
+    });
 
     // Record bulk usage atomically
     if (user) {
@@ -2297,6 +2318,7 @@ function BulkUpload({ onResultsReady, user, limits = { bulk: 100 }, userPlan, on
         <div style={{ marginBottom: 14, padding: "10px 16px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fcd34d", fontSize: 13, color: "#92400e", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <span>Basic plan — up to <strong>1,000 rows</strong> per upload. Used this period: <strong>{userPlan.bulk_used || 0}</strong></span>
           <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
+            onClick={() => trackEvent("upgrade_click", { current_plan: "basic", target_plan: "pro", location: "bulk_upload_banner" })}
             style={{ padding: "5px 16px", borderRadius: 6, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
             Upgrade to Pro →
           </a>
@@ -3133,6 +3155,12 @@ function ExportPage({ bulkResults }) {
   const label = hasRealData ? `${data.length} rows from Bulk Upload` : `${data.length} demo rows (upload a file in Bulk Upload to use your own data)`;
 
   function doDownload() {
+    trackEvent("export_download", {
+      format,
+      fields_count: fields.length,
+      rows_count: data.length,
+      is_real_data: hasRealData,
+    });
     const filename = `logistics_export_${Date.now()}`;
     const rows = data.map(r => {
       const full = buildExportRow(r);
@@ -3452,6 +3480,10 @@ function AIAssistant({ initialContext = "", onClearContext, bulkResults = [] }) 
     // Record AI usage (only if successful response)
     if (!errorMsg) {
       await incrementAiUsed();
+      trackEvent("ai_question_success", {
+        plan: userPlan?.plan || "guest",
+        has_uploaded_data: Boolean(results?.length),
+      });
     }
   }
 
@@ -4268,10 +4300,12 @@ export default function App() {
                   {planKey === "guest" && (
                     <>
                       <a href="https://buy.stripe.com/cNibJ2aYX7W81r8f4u7ok01" target="_blank" rel="noopener noreferrer"
+                        onClick={() => trackEvent("upgrade_click", { current_plan: "guest", target_plan: "basic", location: "sidebar" })}
                         style={{ display: "block", textAlign: "center", padding: "5px 0", borderRadius: 6, background: "#6366f1", color: "#fff", fontWeight: 700, fontSize: 11, textDecoration: "none", marginBottom: 4 }}>
                         Get Basic NZ$9 →
                       </a>
                       <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
+                        onClick={() => trackEvent("upgrade_click", { current_plan: "guest", target_plan: "pro", location: "sidebar" })}
                         style={{ display: "block", textAlign: "center", padding: "5px 0", borderRadius: 6, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 11, textDecoration: "none", marginBottom: 6 }}>
                         Get Pro NZ$29 →
                       </a>
@@ -4279,6 +4313,7 @@ export default function App() {
                   )}
                   {planKey === "basic" && (
                     <a href="https://buy.stripe.com/aFacN6gjha4g7Pwf4u7ok00" target="_blank" rel="noopener noreferrer"
+                      onClick={() => trackEvent("upgrade_click", { current_plan: "basic", target_plan: "pro", location: "sidebar" })}
                       style={{ display: "block", textAlign: "center", padding: "5px 0", borderRadius: 6, background: C.accent, color: "#fff", fontWeight: 700, fontSize: 11, textDecoration: "none", marginBottom: 6 }}>
                       Upgrade to Pro →
                     </a>
