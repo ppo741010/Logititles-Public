@@ -21,9 +21,9 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZHKHH11Y12"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-ZHKHH11Y12');
+      window.gtag = function(){ window.dataLayer.push(arguments); };
+      window.gtag('js', new Date());
+      window.gtag('config', 'G-ZHKHH11Y12');
     </script>
   </head>
   <body>
