@@ -35,6 +35,17 @@ import { PrivacyPolicy } from "./pages/PrivacyPolicy.jsx";
 import { TermsOfService } from "./pages/TermsOfService.jsx";
 import { MarketInsights } from "./pages/MarketInsights.jsx";
 
+const NAV = [
+  { id: "analyzer", label: "Single Analyzer", icon: "🔍", component: SingleAnalyzer },
+  { id: "bulk",     label: "Bulk Upload",     icon: "📂", component: BulkUpload },
+  { id: "skills",   label: "Skill Mapper",    icon: "🧩", component: SkillMapper },
+  { id: "titles",   label: "Title Cleaner",   icon: "✏️", component: TitleCleaner },
+  { id: "export",   label: "Export",          icon: "⬇️", component: ExportPage },
+  { id: "insights", label: "Market Insights", icon: "📊", component: MarketInsights },
+  { id: "ai",       label: "AI Assistant",    icon: "✨", component: AIAssistant },
+  { id: "about",    label: "About",           icon: "ℹ️", component: About },
+];
+
 export default function App() {
   const isMobile = useIsMobile();
   const [showLanding, setShowLanding]     = useState(true);
