@@ -19,6 +19,13 @@ import { AILoginWall } from "../components/AILoginWall.jsx";
 import { AIProWall } from "../components/AIProWall.jsx";
 import { ResetPasswordModal } from "../components/ResetPasswordModal.jsx";
 
+const QUICK_PROMPTS = [
+  "Why would a title be classified as Other/Noise?",
+  "What's the difference between Operations and Warehouse?",
+  "How do I improve low-confidence results?",
+  "What does the confidence score mean?",
+];
+
 export function AIAssistant({ initialContext = "", onClearContext, bulkResults = [] }) {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi! I'm your logistics HR specialist. Ask me anything about your classification results, salary benchmarks, or logistics job titles in general." }

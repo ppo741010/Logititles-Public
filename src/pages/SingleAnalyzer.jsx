@@ -39,6 +39,15 @@ function incrementGuestUsage() {
   return usage.count;
 }
 
+const SA_EXAMPLES = [
+  "Sr. Freight Coordinator – FCL/LCL (NZ)",
+  "Ops Mgr 3PL Warehouse [Contract]",
+  "Customs Clearance / Import Export Officer",
+  "Retail Health Consultant",
+  "Demand Planner - APAC",
+  "BD Executive Last Mile AU",
+];
+
 export function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin,
   savedTitle = "", savedDesc = "", savedCountry = "", savedResult = null,
   onSaveState }) {

@@ -19,6 +19,8 @@ import { AILoginWall } from "../components/AILoginWall.jsx";
 import { AIProWall } from "../components/AIProWall.jsx";
 import { ResetPasswordModal } from "../components/ResetPasswordModal.jsx";
 
+const MIN_SALARY_SAMPLE_SIZE = 20;
+
 export function MarketInsights() {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);

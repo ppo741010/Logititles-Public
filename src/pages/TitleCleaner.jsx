@@ -19,6 +19,17 @@ import { AILoginWall } from "../components/AILoginWall.jsx";
 import { AIProWall } from "../components/AIProWall.jsx";
 import { ResetPasswordModal } from "../components/ResetPasswordModal.jsx";
 
+const TC_SAMPLES = [
+  "Snr Whse Ops Coord",
+  "Jr Logistics Admin",
+  "Hiring Now: Freight Coordinator",
+  "Warehouse Assistant - Auckland",
+  "Retail Health Consultant",
+  "Import/Export Admin",
+  "SUPPLY CHAIN MANAGER",
+  "Ops Mgr - 3PL Warehouse [Fixed Term]",
+];
+
 export function TitleCleaner() {
   const [manualInput, setManualInput]   = useState("");
   const [manualResult, setManualResult] = useState(null);

@@ -19,6 +19,12 @@ import { AILoginWall } from "../components/AILoginWall.jsx";
 import { AIProWall } from "../components/AIProWall.jsx";
 import { ResetPasswordModal } from "../components/ResetPasswordModal.jsx";
 
+const MIN_SALARY_SAMPLE_SIZE = 20;
+const DOMAIN_PALETTE = [
+  "#3b6ef5","#16a34a","#d97706","#dc2626","#7c3aed",
+  "#0891b2","#db2777","#65a30d","#ea580c","#6b7280",
+];
+
 export function ResultCharts({ results, fileName = "" }) {
   const chartRef = useRef(null);
   const [exporting, setExporting] = useState(false);
