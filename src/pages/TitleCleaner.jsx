@@ -19,6 +19,8 @@ import { AILoginWall } from "../components/AILoginWall.jsx";
 import { AIProWall } from "../components/AIProWall.jsx";
 import { ResetPasswordModal } from "../components/ResetPasswordModal.jsx";
 
+let _tcSampleCache = null;
+
 const TC_SAMPLES = [
   "Snr Whse Ops Coord",
   "Jr Logistics Admin",
