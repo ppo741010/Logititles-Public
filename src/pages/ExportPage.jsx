@@ -19,6 +19,18 @@ import { AILoginWall } from "../components/AILoginWall.jsx";
 import { AIProWall } from "../components/AIProWall.jsx";
 import { ResetPasswordModal } from "../components/ResetPasswordModal.jsx";
 
+const DEMO_TITLES = [
+  "Senior Freight Coordinator – FCL (NZ)",
+  "Ops Mgr 3PL Warehouse [Contract]",
+  "Retail Health Consultant",
+  "Customs Clearance / Import Export Officer",
+  "APAC Supply Chain Planner",
+  "TMS/WMS Systems Analyst",
+  "Warehouse Assistant – Night Shift",
+  "Customer Service / Dispatch Coordinator",
+];
+const DEMO_RESULTS = DEMO_TITLES.map((raw, i) => ({ id: i + 1, raw, country: "", ...analyze(raw, "", "") }));
+
 export function ExportPage({ bulkResults }) {
   const [format, setFormat]   = useState("csv");
   const [fields, setFields]   = useState(["raw_title","clean_title","domain","work_nature","seniority","confidence","status","out_of_scope","needs_review"]);
