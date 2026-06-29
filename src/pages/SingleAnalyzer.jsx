@@ -19,6 +19,9 @@ import { AILoginWall } from "../components/AILoginWall.jsx";
 import { AIProWall } from "../components/AIProWall.jsx";
 import { ResetPasswordModal } from "../components/ResetPasswordModal.jsx";
 
+const ANALYZER_GUEST_LIMIT = 10;
+const ANALYZER_LS_KEY = "analyzer_usage";
+
 function getGuestUsage() {
   try {
     const raw = localStorage.getItem(ANALYZER_LS_KEY);
@@ -68,7 +71,7 @@ export function SingleAnalyzer({ onAskAI, user, planKey = "guest", onLogin,
     setResult(resolved);
     setLoading(false);
     trackEvent("single_analyzer_success", {
-      plan: userPlan?.plan || "guest",
+      plan: planKey,
       status: resolved?.out_of_scope ? "out_of_scope" : (resolved?.needsReview ? "review_required" : "good_match"),
       out_of_scope: Boolean(resolved?.out_of_scope),
       needs_review: Boolean(resolved?.needsReview),
